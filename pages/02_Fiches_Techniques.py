@@ -18,7 +18,7 @@ with tab_fiches:
     with col1:
         # Remplace par le nom exact de ton image dans le dossier assets
         # Si tu n'as pas encore mis l'image, laisse commenté ou mets une image test
-        st.image("images/Intercep_utilisation.png", caption="Aperçu")
+        st.image("images/intercep_utilisation.png", caption="Aperçu")
         st.info("🖼️ (Image de la fiche ici)") 
 
     with col2:
@@ -30,11 +30,11 @@ with tab_fiches:
         
         # Bouton de téléchargement du PDF
         # Pour que ça marche, il faut que le fichier existe dans le dossier 'assets'
-with open("images/Intercep_utilisation.pdf", "rb") as pdf_file:
+with open("images/intercep_utilisation.pdf", "rb") as pdf_file:
     st.download_button(    # <--- J'ai ajouté la parenthèse ouvrante ici
         label="⬇️ Télécharger la fiche (PDF)",
         data=pdf_file,
-        file_name="Intercep_utilisation.pdf",  # Le nom que le fichier aura une fois téléchargé sur l'ordi du client
+        file_name="intercep_utilisation.pdf",  # Le nom que le fichier aura une fois téléchargé sur l'ordi du client
         mime="application/pdf"
     )   # <--- J'ai ajouté la parenthèse fermante ici
     st.write("*(Le bouton de téléchargement apparaîtra une fois le PDF ajouté)*")
