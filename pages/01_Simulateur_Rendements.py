@@ -58,11 +58,29 @@ moyenne_grappes = 0
 if methode == "Tableau Excel (40 pieds)":
     default_data = {"Pied": list(range(1, 41)), "Nombre de grappes": [0]*40}
     df_input = pd.DataFrame(default_data)
-    edited_df = st.data_editor(df_input, use_container_width=True, num_rows="fixed")
+    
+    edited_df = st.data_editor(
+        df_input,
+        use_container_width=True,
+        num_rows="fixed",
+        hide_index=True,  # <--- C'est ici qu'on cache la colonne 0-39
+        column_config={
+            "Pied": st.column_config.NumberColumn(
+                "Pied",
+                width="small",    # <--- Force la colonne à être étroite
+                disabled=True,    # Astuce : Empêche de modifier le numéro du pied (lecture seule)
+                format="%d"       # Affiche des nombres entiers (pas de virgule)
+            ),
+            "Nombre de grappes": st.column_config.NumberColumn(
+                "Nombre de grappes",
+                min_value=0,      # Empêche de mettre des nombres négatifs
+                step=1            # Saisie par nombre entier
+            )
+        }
+    )
+    
     moyenne_grappes = edited_df["Nombre de grappes"].mean()
     st.markdown(f"**Moyenne calculée : {moyenne_grappes:.2f} grappes/pied**")
-else:
-    moyenne_grappes = st.number_input("Moyenne de grappes par pied", min_value=0.0, step=0.1)
 
 # Pourcentages
 manquants = st.number_input(
