@@ -65,8 +65,15 @@ else:
     moyenne_grappes = st.number_input("Moyenne de grappes par pied", min_value=0.0, step=0.1)
 
 # Pourcentages
-manquants = st.slider("Pourcentage de pieds manquants (%)", 0, 100, 0)
-pertes = st.slider("Pourcentage de pertes à la récolte (%)", 0, 100, 5)
+manquants = st.number_input(
+    "Pourcentage de pieds manquants (%)",
+    min_value=0.0,
+    max_value=100.0,
+    value=0.0,
+    step=0.01,  # Permet de monter de 0.01 en 0.01
+    format="%.2f"  # Affiche bien deux décimales (ex: 12.50)
+)
+pertes = st.slider("Pourcentage de pertes possible à la récolte (%)", 0, 100, 5)
 
 # Résultats
 st.subheader("Résultats")
