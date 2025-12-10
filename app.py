@@ -18,17 +18,17 @@ with st.sidebar:
         """
     )
     st.markdown("---")
-    st.markdown("📧 **Contact :** ton-email@pro.com")
-    st.markdown("🔗 **LinkedIn :** [Ton Profil](https://www.linkedin.com)")
+    st.markdown("📧 **Contact :** juliette.maugain@gmail.com")
+    st.markdown("🔗 **LinkedIn :** [Mon Profil](https://www.linkedin.com/in/juliette-maugain-78498b303?utm_source=share&utm_campaign=share_via&utm_content=profile&utm_medium=ios_app)")
 
 # 3. Corps principal - Section Présentation
 col1, col2 = st.columns([3, 1]) # La colonne texte est 3x plus large que la colonne photo
 
 with col1:
-    st.title("Bienvenue sur mon Espace Pro 👋")
+    st.title("Bienvenue sur mon Espace Pro ")
     st.markdown("""
     ### Ingénierie & Solutions Digitales
-    Bonjour ! Je suis **[Ton Prénom]**, passionné par l'alliance entre l'agronomie et la technologie.
+    Bonjour ! Je suis Juliette Maugain, étudiante à l'Institut Agro de Montpellier et en alternance au domaine Laurent Miquel.
     
     J'ai créé cette plateforme pour centraliser mes travaux :
     * Des **simulateurs interactifs** pour l'aide à la décision.
@@ -68,7 +68,7 @@ st.divider()
 st.markdown(
     """
     <div style='text-align: center; color: grey;'>
-        © 2024 - Développé avec Python & Streamlit par [Ton Nom]
+        © 2024 - Développé avec Python & Streamlit par Juliette Maugain
     </div>
     """, 
     unsafe_allow_html=True
