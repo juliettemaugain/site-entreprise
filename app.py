@@ -31,7 +31,7 @@ st.markdown("""
 # 3. LA BANNIÈRE (Tout en haut, pleine largeur)
 try:
     # use_container_width=True permet à l'image de toucher les bords
-    st.image("images/banniere_domaine.jpg", use_container_width=True)
+    st.image("images/banniere_domaine.JPG", use_container_width=True)
 except:
     pass # Si pas d'image, pas grave
 
