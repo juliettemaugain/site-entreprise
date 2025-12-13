@@ -37,6 +37,8 @@ except:
 
 st.write("") # Un petit espace vide pour aérer
 
+st.markdown("<h1 class='main-header'>DOMAINE </h1>", unsafe_allow_html=True)
+
 # 4. LE LOGO (Centré grâce aux colonnes)
 # On crée 3 colonnes : [Vide, Logo, Vide]
 # Les chiffres [3, 2, 3] définissent la largeur relative. 
@@ -50,7 +52,6 @@ with col_milieu:
         st.write("") # Pas de logo, pas d'erreur
 
 # 5. LE TITRE (Juste en dessous du logo)
-st.markdown("<h1 class='main-header'>DOMAINE LAURENT MIQUEL</h1>", unsafe_allow_html=True)
 st.markdown("<p class='sub-header'>CHÂTEAU CAZAL VIEL<br>Plateforme Technique Viticole</p>", unsafe_allow_html=True)
 
 # 6. La ligne de séparation avant le contenu
