@@ -18,11 +18,45 @@ fiches = [
         "pdf": "images/intercep.pdf"
     },
     {
+        "titre": "Broyeur Ferrand",
+       "image": "images/Broyeur_ferrand.png",
+        "pdf": "images/Broyeur_ferrand.pdf"      
+    },
+   {
+        "titre": "Entretient & Maintenance Écimeuse",
+       "image": "images/Entretient & Maintenance Écimeuse.png",
+        "pdf": "images/Entretient & Maintenance Écimeuse.pdf"      
+    },
+    {
+        "titre": "Cuves 400-600L",
+       "image": "images/Cuves 400-600L.png",
+        "pdf": "images/Cuves 400-600L.pdf"      
+    },
+    {
+        "titre": "Broyeur SICMA",
+       "image": "images/Broyeur SICMA.png",
+        "pdf": "images/Broyeur SICMA.pdf"      
+    },
+    {
+        "titre": "Centrales hydrauliques",
+       "image": "images/Centrales hydrauliques.png",
+        "pdf": "images/Centrales hydrauliques.pdf"      
+    },
+    {
+        "titre": "Prétrailleuse utilisation+maintenance",
+       "image": "images/Prétrailleuse utilisation+maintenance.png",
+        "pdf": "images/Prétrailleuse utilisation+maintenance.pdf"      
+    },
+    {
         "titre": "Réglage Pulvérisateur",
        "image": "images/intercep_utilisation.png",
-        "pdf": "images/intercep.pdf"      # Remplace par le bon PDF
+        "pdf": "images/intercep.pdf"      
     },
-   
+    {
+        "titre": "Réglage Pulvérisateur",
+       "image": "images/intercep_utilisation.png",
+        "pdf": "images/intercep.pdf"      
+    },
 ]
 
 # --- 2. FILTRAGE ---
