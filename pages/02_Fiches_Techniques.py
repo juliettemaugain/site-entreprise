@@ -48,15 +48,76 @@ fiches = [
         "pdf": "images/Prétrailleuse utilisation+maintenance.pdf"      
     },
     {
-        "titre": "Réglage Pulvérisateur",
-       "image": "images/intercep_utilisation.png",
-        "pdf": "images/intercep.pdf"      
+        "titre": "fiches techniques des deux cultibio",
+       "image": "images/Cultibio x2.png",
+        "pdf": "images/Cultibio x2.pdf"      
     },
     {
-        "titre": "Réglage Pulvérisateur",
-       "image": "images/intercep_utilisation.png",
-        "pdf": "images/intercep.pdf"      
+        "titre": "Éole Pellenc",
+       "image": "images/Éole Pellenc.png",
+        "pdf": "images/Éole Pellenc.pdf"      
     },
+    {
+        "titre": "ID-roll",
+       "image": "images/ID-roll.png",
+        "pdf": "images/ID-roll.pdf"      
+    },
+    {
+        "titre": "Intercep utilisation",
+       "image": "images/Intercep utilisation.png",
+        "pdf": "images/Intercep utilisation.pdf"      
+    },
+    {
+        "titre": "Ozoneur ",
+       "image": "images/Ozoneur .png",
+        "pdf": "images/Ozoneur .pdf"      
+    },
+    {
+        "titre": "Poudreuse",
+       "image": "images/poudreuse.png",
+        "pdf": "images/poudreuse.pdf"      
+    },
+    {
+        "titre": "Pulvérisateur trainé Grégoire",
+       "image": "images/Pulvérisateur trainé Grégoire.png",
+        "pdf": "images/Pulvérisateur trainé Grégoire.pdf"      
+    },
+    {
+        "titre": "Pulvérisateur trainé TOMIX",
+       "image": "images/Pulvérisateur trainé TOMIX.png",
+        "pdf": "images/Pulvérisateur trainé TOMIX.pdf"      
+    },
+    {
+        "titre": "Fonctionnement du quai de réception",
+       "image": "images/quai de réception.png",
+        "pdf": "images/quai de réception.pdf"      
+    },
+    {
+        "titre": "Tête de récolte",
+       "image": "images/Tête de récolte.png",
+        "pdf": "images/Tête de récolte.pdf"      
+    },
+    {
+        "titre": "TOMIX 2",
+       "image": "images/TOMIX 2.png",
+        "pdf": "images/TOMIX 2.pdf"      
+    },
+     {
+        "titre": "",
+       "image": "images/.png",
+        "pdf": "images/.pdf"      
+    },
+     {
+        "titre": "Tracteurs entretient quotidien",
+       "image": "images/Tracteurs entretient quotidien.png",
+        "pdf": "images/Tracteurs entretient quotidien.pdf"      
+    },
+     {
+        "titre": "Tracteurs New Holland",
+       "image": "images/Tracteurs New Holland.png",
+        "pdf": "images/Tracteurs New Holland.pdf"      
+    },
+
 ]
 
 # --- 2. FILTRAGE ---
