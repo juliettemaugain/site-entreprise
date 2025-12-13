@@ -14,7 +14,7 @@ La plateforme à été développée et conçu par Juliette Maugain, alternante a
 ---
 ### Développement 
 **Technologie :** Python & Streamlit  
-**Contact :** juliette.maugain@gmail.com, 
+**Contact :** juliette.maugain@gmail.com,  
 🔗 **LinkedIn :** [Mon Profil](https://www.linkedin.com/in/juliette-maugain-78498b303?utm_source=share&utm_campaign=share_via&utm_content=profile&utm_medium=ios_app)
             
 
