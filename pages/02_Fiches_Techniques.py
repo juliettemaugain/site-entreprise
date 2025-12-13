@@ -102,11 +102,7 @@ fiches = [
        "image": "images/TOMIX 2.png",
         "pdf": "images/TOMIX 2.pdf"      
     },
-     {
-        "titre": "",
-       "image": "images/.png",
-        "pdf": "images/.pdf"      
-    },
+    
      {
         "titre": "Tracteurs entretient quotidien",
        "image": "images/Tracteurs entretient quotidien.png",
