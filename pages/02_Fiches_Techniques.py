@@ -19,32 +19,32 @@ fiches = [
     },
     {
         "titre": "Broyeur Ferrand",
-       "image": "images/Broyeur_ferrand.png",
+       "image": "images/Broyeur_ferrand.jpg",
         "pdf": "images/Broyeur_ferrand.pdf"      
     },
    {
         "titre": "Entretient & Maintenance Écimeuse",
-       "image": "images/Entretient & Maintenance Écimeuse.png",
+       "image": "images/Entretient & Maintenance Écimeuse.jpg",
         "pdf": "images/Entretient & Maintenance Écimeuse.pdf"      
     },
     {
         "titre": "Cuves 400-600L",
-       "image": "images/Cuves 400-600L.png",
+       "image": "images/Cuves 400-600L.jpg",
         "pdf": "images/Cuves 400-600L.pdf"      
     },
     {
         "titre": "Broyeur SICMA",
-       "image": "images/Broyeur SICMA.png",
+       "image": "images/Broyeur SICMA.jpg",
         "pdf": "images/Broyeur SICMA.pdf"      
     },
     {
         "titre": "Centrales hydrauliques",
-       "image": "images/Centrales hydrauliques.png",
+       "image": "images/Centrales hydrauliques.jpg",
         "pdf": "images/Centrales hydrauliques.pdf"      
     },
     {
         "titre": "Prétrailleuse utilisation+maintenance",
-       "image": "images/Prétrailleuse utilisation+maintenance.png",
+       "image": "images/Prétrailleuse utilisation+maintenance.jpg",
         "pdf": "images/Prétrailleuse utilisation+maintenance.pdf"      
     },
     {
