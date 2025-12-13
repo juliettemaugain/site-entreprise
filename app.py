@@ -45,7 +45,7 @@ st.write("") # Un petit espace vide pour aérer
 col_gauche, col_milieu, col_droite = st.columns([3, 2, 3])
 
 with col_milieu:
-    st.markdown("<h1 class='main-header'>DOMAINE </h1>", unsafe_allow_html=True)
+    st.markdown("<h1 class='main-header'>DOMAINE</h1>", unsafe_allow_html=True)
     try:
         st.image("images/logo.png", use_container_width=True)
     except:
