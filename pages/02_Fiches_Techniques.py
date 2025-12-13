@@ -1,65 +1,66 @@
 import streamlit as st
 
-st.set_page_config(page_title="Documentation Technique", page_icon="📄")
+st.set_page_config(page_title="Documentation Technique", page_icon="📚", layout="wide")
 
-st.title("📚 Documentation & Tutoriels")
-st.markdown("Retrouvez ici les fiches techniques d'utilisation et de maintenance des outils et des vidéos.")
+st.title("📚 Documentation Technique")
 
-# Création de deux onglets pour organiser la page
-tab_fiches, tab_videos = st.tabs(["📄 Fiches Techniques", "🎥 Vidéos Youtube"])
+# --- BARRE DE RECHERCHE ---
+# Permet de filtrer les fiches si tu en as 20 !
+recherche = st.text_input("🔍 Rechercher une fiche...", "")
 
-# --- ONGLET 1 : LES FICHES ---
-with tab_fiches:
-    st.header("Fiches Techniques Viticoles")
+# --- 1. TA BASE DE DONNÉES ---
+# C'est ici que tu ajoutes tes 20 fiches. 
+# Tu as juste à copier-coller une ligne entre les accolades {} et changer les noms.
+fiches = [
+    {
+        "titre": "Utilisation Intercep",
+        "image": "images/intercep_utilisation.png",
+        "pdf": "images/intercep.pdf"
+    },
+    {
+        "titre": "Réglage Pulvérisateur",
+       "image": "images/intercep_utilisation.png",
+        "pdf": "images/intercep.pdf"      # Remplace par le bon PDF
+    },
+   
+]
+
+# --- 2. FILTRAGE ---
+# Si on a écrit un truc dans la recherche, on ne garde que les fiches correspondantes
+fiches_a_afficher = [f for f in fiches if recherche.lower() in f["titre"].lower()]
+
+if not fiches_a_afficher:
+    st.warning("Aucune fiche trouvée avec ce nom.")
+
+# --- 3. AFFICHAGE EN GRILLE (GALERIE) ---
+# On définit qu'on veut 3 colonnes (ou 4 si tu préfères)
+cols = st.columns(3) 
+
+for index, fiche in enumerate(fiches_a_afficher):
+    # L'astuce mathématique pour remplir les colonnes une par une :
+    # index % 3 vaudra 0, puis 1, puis 2, puis recommence à 0...
+    colonne_actuelle = cols[index % 3]
     
-    # --- FICHE N°1 ---
-    col1, col2 = st.columns([1, 2]) # Colonne image petite, colonne texte grande
-    
-    with col1:
-        # Remplace par le nom exact de ton image dans le dossier assets
-        # Si tu n'as pas encore mis l'image, laisse commenté ou mets une image test
-        st.image("images/intercep_utilisation.png", caption="Aperçu")
-        st.info("🖼️ (Image de la fiche ici)") 
+    with colonne_actuelle:
+        # On crée un cadre visuel (container) pour faire propre
+        with st.container(border=True):
+            st.subheader(fiche["titre"])
+            
+            # Affichage de l'image (l'aperçu)
+            try:
+                st.image(fiche["image"], use_container_width=True)
+            except:
+                st.error(f"Image introuvable : {fiche['image']}")
 
-    with col2:
-        st.subheader("Utilisation du matériel X")
-        st.write("""
-        Description rapide de cette fiche. Elle explique comment régler le matériel 
-        pour optimiser le passage dans les rangs étroits.
-        """)
-        
-        # Bouton de téléchargement du PDF
-        # Pour que ça marche, il faut que le fichier existe dans le dossier 'assets'
-with open("images/intercep.pdf", "rb") as pdf_file:
-    st.download_button(    # <--- J'ai ajouté la parenthèse ouvrante ici
-        label="⬇️ Télécharger la fiche (PDF)",
-        data=pdf_file,
-        file_name="intercep.pdf",  # Le nom que le fichier aura une fois téléchargé sur l'ordi du client
-        mime="application/pdf"
-    )   # <--- J'ai ajouté la parenthèse fermante ici
-    st.write("*(Le bouton de téléchargement apparaîtra une fois le PDF ajouté)*")
-
-    st.divider() # Ligne de séparation pour la prochaine fiche
-
-    # --- FICHE N°2 (Tu peux copier-coller le bloc ci-dessus pour ajouter d'autres fiches) ---
-    st.subheader("Autre Fiche Technique")
-    st.write("Description de la deuxième fiche...")
-
-
-# --- ONGLET 2 : LES VIDÉOS ---
-with tab_videos:
-    st.header("Démonstrations Vidéo")
-    
-    col_v1, col_v2 = st.columns(2)
-    
-    with col_v1:
-        st.subheader("Manipulation porteur pellenc")
-        # Remplace par ton lien Youtube
-        st.video("https://youtu.be/w02ZVEQuqYA")
-        st.caption("Explication courte de la vidéo.")
-
-    with col_v2:
-        st.subheader("Maintenance tracteurs New Holland")
-        # Remplace par ton lien Youtube
-        st.video("https://youtu.be/XT799lE8uwA")
-        st.caption("Explication courte de la vidéo.")
+            # Bouton de téléchargement
+            try:
+                with open(fiche["pdf"], "rb") as pdf_file:
+                    st.download_button(
+                        label="⬇️ PDF",
+                        data=pdf_file,
+                        file_name=fiche["pdf"].split("/")[-1], # Garde juste le nom du fichier
+                        mime="application/pdf",
+                        use_container_width=True # Le bouton prend toute la largeur
+                    )
+            except:
+                st.warning("PDF en attente")
