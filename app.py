@@ -76,7 +76,7 @@ st.divider() # Une ligne de séparation propre
 st.subheader("📩 Boîte à idées & Support")
 
 # On utilise un "expander" pour ne pas encombrer la page si on ne s'en sert pas
-with st.expander("💡 Une idée ? Un bug ? Cliquez ici pour m'écrire"):
+with st.expander("💡 Une idée ? Un problème ? Cliquez ici pour m'écrire"):
     
     st.write("Dites-moi ce qu'il faut améliorer sur le site :")
     
@@ -85,7 +85,7 @@ with st.expander("💡 Une idée ? Un bug ? Cliquez ici pour m'écrire"):
     with col_form1:
         # Les champs de saisie
         objet_mail = st.selectbox("Sujet", ["Amélioration du site", "Erreur dans un calcul", "Ajout de fiche technique", "Autre"], key="objet")
-        message_mail = st.text_area("Votre message", height=100, placeholder="Exemple : Pourrait-on ajouter le cépage Merlot ?", key="msg")
+        message_mail = st.text_area("Votre message", height=100, placeholder="Exemple : Pourrait-on ajouter ce cépage ?", key="msg")
     
     with col_form2:
         st.write("") # Espacement pour aligner le bouton vers le bas
