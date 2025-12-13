@@ -3,6 +3,8 @@ import streamlit as st
 import pandas as pd
 from datetime import datetime
 
+st.set_page_config(page_title="Simulateur de rendements viticoles", page_icon="🍷")
+
 # Appliquer un style CSS global avec police Lato
 st.markdown("""
     <style>
