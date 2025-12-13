@@ -9,14 +9,14 @@ st.markdown("""
 Cet outil a été conçu et développé en interne pour centraliser les outils d'aide à la décision 
 et la documentation technique du **Château Cazal Viel (Domaine Laurent Miquel)**.
 
-L'objectif est de faciliter l'accès aux calculs de rendements et aux fiches techniques 
-pour les équipes viticoles.
+La plateforme à été développée et conçu par Juliette Maugain, alternante au Domaine et étudiante en ingénieurie agronome à Montpellier SupAgro.  
 
 ---
-### Développement
-**Conception & Code :** [Ton Prénom] [Ton Nom]  
+### Développement 
 **Technologie :** Python & Streamlit  
-**Contact :** ton-email@laurent-miquel.com
+**Contact :** juliette.maugain@gmail.com
+st.markdown("🔗 **LinkedIn :** [Mon Profil](https://www.linkedin.com/in/juliette-maugain-78498b303?utm_source=share&utm_campaign=share_via&utm_content=profile&utm_medium=ios_app)")
+            
 
 *Dernière mise à jour : Décembre 2025*
 """)

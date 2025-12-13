@@ -3,7 +3,7 @@ import streamlit as st
 st.set_page_config(page_title="Tutoriels Vidéo", page_icon="🎥", layout="wide")
 
 st.title("🎥 Tutoriels & Démonstrations")
-st.markdown("Retrouvez ici les vidéos explicatives sur l'utilisation du matériel et les méthodes de taille.")
+st.markdown("Retrouvez ici les vidéos explicatives sur l'utilisation et l'entretient du matériel.")
 
 # --- TA BASE DE DONNÉES VIDÉOS ---
 # C'est ici que tu ajoutes tes liens Youtube.
