@@ -1,48 +1,62 @@
 import streamlit as st
 
-# 1. Config PRO
+# 1. Configuration de la page
 st.set_page_config(
     page_title="Outils Viticoles - Laurent Miquel",
     page_icon="🍇",
     layout="wide"
 )
 
-# 2. CSS pour cacher le menu hamburger inutile en haut à droite et styliser
+# 2. CSS pour le style (Titre couleur Vin, centrage)
 st.markdown("""
     <style>
-    .main-header {font-size: 2.5rem; color: #4F091D; text-align: center; font-family: 'Helvetica', sans-serif;}
-    .sub-header {font-size: 1.5rem; color: gray; text-align: center; margin-bottom: 2rem;}
-    .card {
-        background-color: #f9f9f9;
-        padding: 20px;
-        border-radius: 10px;
-        border: 1px solid #ddd;
-        text-align: center;
-        box-shadow: 2px 2px 10px rgba(0,0,0,0.05);
+    .main-header {
+        font-size: 3rem; 
+        color: #4F091D; 
+        text-align: center; 
+        font-family: 'Helvetica', sans-serif;
+        font-weight: bold;
+        margin-bottom: 0px;
+    }
+    .sub-header {
+        font-size: 1.5rem; 
+        color: gray; 
+        text-align: center; 
+        margin-top: -10px;
+        margin-bottom: 2rem;
     }
     </style>
 """, unsafe_allow_html=True)
 
-# 3. En-tête (Header) avec Logos/Titres
-col_logo, col_titre, col_vide = st.columns([1, 4, 1])
+# 3. LA BANNIÈRE (Tout en haut, pleine largeur)
+try:
+    # use_container_width=True permet à l'image de toucher les bords
+    st.image("images/banniere_domaine.jpg", use_container_width=True)
+except:
+    pass # Si pas d'image, pas grave
 
-with col_logo:
-    # Si tu as un logo, décommente la ligne ci-dessous :
-    st.image("images/logo.png", width=120) 
-    st.write("") # Espace vide si pas de logo
+st.write("") # Un petit espace vide pour aérer
 
-with col_titre:
-    st.markdown("<h1 class='main-header'>DOMAINE LAURENT MIQUEL</h1>", unsafe_allow_html=True)
-    st.markdown("<p class='sub-header'>CHÂTEAU CAZAL VIEL<br>Plateforme Technique Viticole</p>", unsafe_allow_html=True)
+# 4. LE LOGO (Centré grâce aux colonnes)
+# On crée 3 colonnes : [Vide, Logo, Vide]
+# Les chiffres [3, 2, 3] définissent la largeur relative. 
+# Si ton logo est trop gros, augmente les chiffres extérieurs (ex: [4, 2, 4])
+col_gauche, col_milieu, col_droite = st.columns([3, 2, 3])
 
+with col_milieu:
+    try:
+        st.image("images/logo.png", use_container_width=True)
+    except:
+        st.write("") # Pas de logo, pas d'erreur
+
+# 5. LE TITRE (Juste en dessous du logo)
+st.markdown("<h1 class='main-header'>DOMAINE LAURENT MIQUEL</h1>", unsafe_allow_html=True)
+st.markdown("<p class='sub-header'>CHÂTEAU CAZAL VIEL<br>Plateforme Technique Viticole</p>", unsafe_allow_html=True)
+
+# 6. La ligne de séparation avant le contenu
 st.divider()
 
-# 4. Belle image d'accueil (Bannière)
-# Si tu n'as pas d'image, tu peux supprimer ces 3 lignes
-try:
-    st.image("images/banniere_domaine.JPG", use_container_width=True)
-except:
-    pass # Si l'image n'est pas là, on ne fait rien
+# ... LA SUITE DE TON CODE (Accès rapides, etc.) RESTE INCHANGÉE ...
 
 # 5. Tableau de bord (Accès rapides)
 st.markdown("### Accès Rapides aux Outils")
@@ -94,7 +108,7 @@ with st.expander("💡 Une idée ? Un problème ? Cliquez ici pour m'écrire"):
         # Logique d'envoi
         import urllib.parse # Nécessaire pour créer le lien mail
         
-        if st.button("🚀 Préparer l'email", use_container_width=True):
+        if st.button(" Préparer l'email", use_container_width=True):
             if message_mail:
                 # Création du lien
                 sujet_clean = urllib.parse.quote(f"[Site Cazal Viel] {objet_mail}")
