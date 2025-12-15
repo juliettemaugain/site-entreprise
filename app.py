@@ -90,9 +90,9 @@ with row2_col1:
 # --- CARTE 4 : CONTACT & AIDE ---
 with row2_col2:
     with st.container(border=True):
-        st.subheader("📩 Contact & Idées")
-        st.write("Signaler un bug, proposer une idée ou voir les crédits.")
-        st.page_link("pages/99_Infos_et_Credits.py", label="Nous écrire", icon="💡", use_container_width=True)
+        st.subheader("Informations & Crédits")
+        st.write("Comprendre le but de cette plateforme")
+        st.page_link("pages/99_Infos_et_Credits.py", label="Aller voir", icon="ℹ️", use_container_width=True)
 
 st.divider()
 
