@@ -109,3 +109,103 @@ else:
         step=0.1,
         format="%.2f"
     )
+
+    # Choix de méthode
+st.subheader("Nombre de grappes par pied")
+methode = st.radio("Méthode de saisie :", ["Tableau Excel (40 pieds)", "Moyenne directe"])
+
+moyenne_grappes = 0
+
+if methode == "Tableau Excel (40 pieds)":
+    default_data = {"Pied": list(range(1, 41)), "Nombre de grappes": [0]*40}
+    df_input = pd.DataFrame(default_data)
+    
+    edited_df = st.data_editor(
+        df_input,
+        use_container_width=True,
+        num_rows="fixed",
+        hide_index=True,  # <--- C'est ici qu'on cache la colonne 0-39
+        column_config={
+            "Pied": st.column_config.NumberColumn(
+                "Pied",
+                width="small",    # <--- Force la colonne à être étroite
+                disabled=True,    # Astuce : Empêche de modifier le numéro du pied (lecture seule)
+                format="%d"       # Affiche des nombres entiers (pas de virgule)
+            ),
+            "Nombre de grappes": st.column_config.NumberColumn(
+                "Nombre de grappes",
+                min_value=0,      # Empêche de mettre des nombres négatifs
+                step=1            # Saisie par nombre entier
+            )
+        }
+    )
+    
+    moyenne_grappes = edited_df["Nombre de grappes"].mean()
+    st.markdown(f"**Moyenne calculée : {moyenne_grappes:.2f} grappes/pied**")
+
+# Pourcentages
+manquants = st.number_input(
+    "Pourcentage de pieds manquants (%)",
+    min_value=0.0,
+    max_value=100.0,
+    value=0.0,
+    step=0.01,  # Permet de monter de 0.01 en 0.01
+    format="%.2f"  # Affiche bien deux décimales (ex: 12.50)
+)
+pertes = st.slider("Pourcentage de pertes possible à la récolte (%)", 0, 100, 5)
+
+# Résultats
+st.subheader("Résultats")
+if st.button("Calculer le rendement"):
+    poids_kg = poids_grappe_g / 1000
+    rendement_t_ha = nb_pieds * moyenne_grappes * poids_kg * (1 - manquants/100) * (1 - pertes/100) / 1000
+    rendement_hl_ha = nb_pieds * moyenne_grappes * poids_kg * (1 - manquants/100) * (1 - pertes/100) / coef_vinif
+
+    result = {
+        "Date": datetime.now().strftime("%Y-%m-%d %H:%M"),
+        "Parcelle": parcelle,
+        "Cépage": cepage_nom_final,
+        "Poids grappe (g)": poids_grappe_g,
+        "Grappes/pied": round(moyenne_grappes, 2),
+        "Pieds/ha": nb_pieds,
+        "% manquants": manquants,
+        "% pertes": pertes,
+        "t/ha": round(rendement_t_ha, 2),
+        "hl/ha": round(rendement_hl_ha, 2)
+    }
+    st.markdown("### 📊 Résultats du calcul")
+    with st.expander("Voir les détails", expanded=True):
+        st.success(
+            f"""
+            - **Parcelle** : {parcelle or "Non précisé"}
+            - **Cépage** : {cepage_nom_final}
+            - **Grappes/pied** : {round(moyenne_grappes, 2)}
+            - **Poids grappe** : {poids_grappe_g} g
+            - **Pieds/ha** : {nb_pieds}
+            - **Manquants** : {manquants} %
+            - **Pertes** : {pertes} %
+            ---
+            - ✅ **Rendement estimé** : **{round(rendement_t_ha, 2)} t/ha**
+            - 🍷 **Rendement vin estimé** : **{round(rendement_hl_ha, 2)} hl/ha**
+            """
+        )
+
+    if "historique" not in st.session_state:
+        st.session_state.historique = []
+    st.session_state.historique.append(result)
+
+# Historique
+st.subheader("Historique des simulations 📊")
+if "historique" in st.session_state and st.session_state.historique:
+    df = pd.DataFrame(st.session_state.historique)
+    st.dataframe(df)
+
+    col1, col2 = st.columns(2)
+    if col1.button("❌ Effacer dernier résultat"):
+        st.session_state.historique.pop()
+    if col2.button("🗑️ Effacer tout l'historique"):
+        st.session_state.historique = []
+else:
+    st.info("Aucune simulation pour le moment.")
+    
+
