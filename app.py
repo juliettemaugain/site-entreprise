@@ -57,25 +57,42 @@ st.markdown("<p class='sub-header'>CHÂTEAU CAZAL VIEL<br>Plateforme Technique V
 # 6. La ligne de séparation avant le contenu
 st.divider()
 
-# ... LA SUITE DE TON CODE (Accès rapides, etc.) RESTE INCHANGÉE ...
+# 5. Tableau de bord (Accès Rapides)
+st.markdown("### 🚀 Menu Principal")
 
-# 5. Tableau de bord (Accès rapides)
-st.markdown("### Accès Rapides aux Outils")
+# On crée une disposition en grille 2x2
+row1_col1, row1_col2 = st.columns(2)
+row2_col1, row2_col2 = st.columns(2)
 
-col1, col2 = st.columns(2)
-
-with col1:
-    # On simule une "Carte" cliquable
+# --- CARTE 1 : SIMULATEUR ---
+with row1_col1:
     with st.container(border=True):
-        st.markdown("### 🍇 Simulateurs")
-        st.markdown("Outils de calculs de rendements et prévisions.")
-        st.info("👉 **Accéder au simulateur** (via le menu à gauche)")
+        st.subheader("🍷 Simulateur")
+        st.write("Calcul des rendements viticoles et estimations.")
+        # Attention : le nom du fichier doit être EXACTEMENT celui dans ton dossier pages
+        st.page_link("pages/01_Simulateur_Rendements.py", label="Lancer le calcul", icon="🧮", use_container_width=True)
 
-with col2:
+# --- CARTE 2 : FICHES TECHNIQUES ---
+with row1_col2:
     with st.container(border=True):
-        st.markdown("### 📚 Documentation")
-        st.markdown("Base de connaissances, fiches techniques et tutoriels.")
-        st.success("👉 **Consulter les fiches** (via le menu à gauche)")
+        st.subheader("📚 Fiches Techniques")
+        st.write("Base documentaire, pdf et itinéraires techniques.")
+        st.page_link("pages/02_Fiches_Techniques.py", label="Voir les fiches", icon="📄", use_container_width=True)
+
+# --- CARTE 3 : VIDÉOS ---
+with row2_col1:
+    with st.container(border=True):
+        st.subheader("🎥 Tutoriels Vidéo")
+        st.write("Démonstrations matériel et méthodes en vidéo.")
+        # Si tu n'as pas encore réussi à créer cette page, commente la ligne ci-dessous avec un #
+        st.page_link("pages/03_Tutoriels_Video.py", label="Regarder les vidéos", icon="▶️", use_container_width=True)
+
+# --- CARTE 4 : CONTACT & AIDE ---
+with row2_col2:
+    with st.container(border=True):
+        st.subheader("📩 Contact & Idées")
+        st.write("Signaler un bug, proposer une idée ou voir les crédits.")
+        st.page_link("pages/99_Infos_et_Credits.py", label="Nous écrire", icon="💡", use_container_width=True)
 
 st.divider()
 
