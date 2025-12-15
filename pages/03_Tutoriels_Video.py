@@ -10,7 +10,7 @@ st.markdown("Retrouvez ici les vidéos explicatives sur l'utilisation et l'entre
 # Copie le bloc { ... } pour ajouter une nouvelle vidéo.
 videos_db = [
     {
-        "titre": "Manippluation du porteur Pellenc : de éole à la tête de récolte",
+        "titre": "Manipulation du porteur Pellenc : de éole à la tête de récolte",
         "url": "https://youtu.be/w02ZVEQuqYA", # Remplace par ton lien
         "description": "Vidéo explicative de toutes les étapes à réaliser lors de cette manipulation, à faire dans l'autre sens pour remettre l'éole. Bien respecter les consignes de sécurités de base"
     },

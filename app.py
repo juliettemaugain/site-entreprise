@@ -99,7 +99,7 @@ st.divider()
 # 6. Actualités ou Message du moment (Optionnel)
 st.subheader("📢 Notes de service / Actualités")
 st.warning("""
-**Campagne 2025** : taille attachage et séquaillage en cours 
+**Campagne 2025** : taille attachage et sécaillage en cours 
 """)
 
 # --- AJOUT : BOÎTE À IDÉES ---
