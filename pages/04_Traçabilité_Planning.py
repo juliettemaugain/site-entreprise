@@ -17,26 +17,27 @@ COLOR_MAP = {
 
 DATA_PARCELLES = {
     "VIGA03": {
-        "nom": "Vio Fournic bas JL", 
-        "cepage": "Viognier", 
-        "surface": 2.28, 
-        "annee": 1997, 
-        # J'ai mis à jour le point central (le marqueur) pour qu'il soit au milieu du polygone
-        "lat": 43.4290, 
-        "lon": 3.0930,
-        "contours": [
-            [43.4296143369082, 3.0924931192498377],
-            [43.428945850119646, 3.092055089459109],
-            [43.428517092637975, 3.0934897957306475],
-            [43.42866001213599, 3.093604064371874],
-            [43.42876604896469, 3.0935405817928086],
-            [43.428844423892656, 3.093464402699169],
-            [43.428913578156795, 3.0933628305733123],
-            [43.428913578156795, 3.093242213674756],
-            [43.42893201928061, 3.0931279450334728],
-            [43.42958206530179, 3.092594691374927],
-            [43.4296143369082, 3.0924931192498377]
-        ]
+        "nom": "Vio Fournic bas JL", "cepage": "Viognier", "surface": 2.28, "annee": 1997, 
+        "lat": 43.4296, "lon": 3.0925, # J'ai ajusté le point central selon tes données
+        # On colle ici le bloc "geometry" tel quel, sans rien toucher !
+        "geometry": {
+          "coordinates": [
+            [
+              [3.0924931192498377, 43.4296143369082],
+              [3.092055089459109, 43.428945850119646],
+              [3.0934897957306475, 43.428517092637975],
+              [3.093604064371874, 43.42866001213599],
+              [3.0935405817928086, 43.42876604896469],
+              [3.093464402699169, 43.428844423892656],
+              [3.0933628305733123, 43.428913578156795],
+              [3.093242213674756, 43.428913578156795],
+              [3.0931279450334728, 43.42893201928061],
+              [3.092594691374927, 43.42958206530179],
+              [3.0924931192498377, 43.4296143369082]
+            ]
+          ],
+          "type": "Polygon"
+        }
     },
     "VIGA01": {"nom": "Vio Jeune JL", "cepage": "Viognier", "surface": 2.70, "annee": 2001, "lat": 43.4225, "lon": 3.0830},
     "VIGA04": {"nom": "Vio Plantier JL", "cepage": "Viognier", "surface": 2.54, "annee": 2014, "lat": 43.4205, "lon": 3.0850},
@@ -93,19 +94,31 @@ with col_map:
         attr='Esri', name='Esri Satellite', overlay=False, control=True
     ).add_to(m)
 
+  
+
     for code, info in DATA_PARCELLES.items():
+        
+        # 1. DESSIN DU CONTOUR (Format GeoJSON Direct)
+        if "geometry" in info:
+            folium.GeoJson(
+                info["geometry"],
+                style_function=lambda x, color=info["color"]: {
+                    'fillColor': color,
+                    'color': color,
+                    'weight': 2,
+                    'fillOpacity': 0.4
+                },
+                tooltip=f"{info['nom']} ({info['surface']} ha)"
+            ).add_to(m)
+
+        # 2. DESSIN DU MARQUEUR (Toujours là pour cliquer)
         folium.Marker(
             [info["lat"], info["lon"]],
             popup=f"<b>{info['nom']}</b>",
             icon=folium.Icon(color=info["color"], icon="leaf", prefix="fa")
         ).add_to(m)
 
-    map_output = st_folium(m, height=400, use_container_width=True)
-
-with col_legend:
-    st.markdown("**Légende**")
-    for cepage, color in COLOR_MAP.items():
-        st.markdown(f"<span style='color:{color};'>●</span> {cepage}", unsafe_allow_html=True)
+    map_output = st_folium(m, height=500, use_container_width=True)
 
 
 # --- LOGIQUE DE SÉLECTION ---
