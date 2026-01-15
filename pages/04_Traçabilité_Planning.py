@@ -124,12 +124,13 @@ if "db_itk" not in st.session_state:
     st.session_state.db_itk = load_data()
 
 
-# --- 3. CARTE (MISE EN CACHE POUR PERFORMANCE) ---
+# --- 3. CARTE (MISE EN CACHE CORRECTE POUR ÉVITER LE BUG) ---
 st.subheader("🗺️ Carte du Vignoble")
 
-@st.cache_data
+# C'est ICI que j'ai changé cache_data par cache_resource
+@st.cache_resource
 def generate_map():
-    # Cette fonction ne se relancera pas à chaque clic, elle est "cachée"
+    # Cette fonction ne se relancera pas à chaque clic
     avg_lat = sum([d['lat'] for d in DATA_PARCELLES.values()]) / len(DATA_PARCELLES)
     avg_lon = sum([d['lon'] for d in DATA_PARCELLES.values()]) / len(DATA_PARCELLES)
     m = folium.Map(location=[avg_lat, avg_lon], zoom_start=15)
