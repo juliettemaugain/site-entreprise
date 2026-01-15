@@ -12,17 +12,16 @@ st.title("🍇 Pilotage du Vignoble - La Gauphine")
 
 CSV_FILE = "data_itk.csv"
 
-# --- 1. DONNÉES RÉFÉRENTIELS (MISE EN CACHE POUR LA VITESSE) ---
+# --- 1. DONNÉES RÉFÉRENTIELS ---
 
+# On utilise cache_data seulement pour les dictionnaires simples, pas la carte
 @st.cache_data
 def get_static_data():
-    # COULEURS
     COLOR_MAP = {
         "Viognier": "blue", "Chardonnay": "orange", "Syrah": "red",
         "Grenache": "darkred", "Marselan": "purple", "Merlot": "darkblue", "Caladoc": "pink"
     }
 
-    # PARCELLES (Tes vraies données)
     DATA_PARCELLES = {
         "VIGA03": {
             "nom": "Syrah Isabelle", "cepage": "Syrah", "surface": 0.56, "annee": 2019,
@@ -61,7 +60,6 @@ def get_static_data():
         "MACA01": {"nom": "Marselan", "cepage": "Marselan", "surface": 1.20, "annee": 2019, "lat": 43.4200, "lon": 3.0760},
     }
 
-    # PRODUITS PHYTOS
     DATA_PRODUITS = {
         "Cuivre Nordox": {"unite": "kg/ha", "dose_ref": 1.25, "cible": "Mildiou", "type": "Biocontrôle", "ift": False},
         "Soufre Mouillable": {"unite": "kg/ha", "dose_ref": 12.5, "cible": "Oïdium", "type": "Biocontrôle", "ift": False},
@@ -124,28 +122,28 @@ if "db_itk" not in st.session_state:
     st.session_state.db_itk = load_data()
 
 
-# --- 3. CARTE (MISE EN CACHE CORRECTE POUR ÉVITER LE BUG) ---
+# --- 3. CARTE (SANS CACHE POUR EVITER LE BUG) ---
 st.subheader("🗺️ Carte du Vignoble")
 
-# C'est ICI que j'ai changé cache_data par cache_resource
-@st.cache_resource
-def generate_map():
-    # Cette fonction ne se relancera pas à chaque clic
+col_map, col_legend = st.columns([5, 1])
+with col_map:
+    # On recalcule la carte à chaque fois (c'est plus sûr)
     avg_lat = sum([d['lat'] for d in DATA_PARCELLES.values()]) / len(DATA_PARCELLES)
     avg_lon = sum([d['lon'] for d in DATA_PARCELLES.values()]) / len(DATA_PARCELLES)
     m = folium.Map(location=[avg_lat, avg_lon], zoom_start=15)
     folium.TileLayer(tiles='https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}', attr='Esri', name='Esri Satellite', overlay=False, control=True).add_to(m)
+    
     for code, info in DATA_PARCELLES.items():
         if "geometry" in info:
-            folium.GeoJson(info["geometry"], style_function=lambda x, c=info.get("color","gray"): {'fillColor': c, 'color': c, 'weight': 2, 'fillOpacity': 0.4}).add_to(m)
+            folium.GeoJson(
+                info["geometry"],
+                style_function=lambda x, c=info.get("color","gray"): {'fillColor': c, 'color': c, 'weight': 2, 'fillOpacity': 0.4},
+                tooltip=f"{info['nom']} ({info['surface']} ha)"
+            ).add_to(m)
         folium.Marker([info["lat"], info["lon"]], popup=info["nom"], icon=folium.Icon(color=info.get("color","gray"), icon="leaf", prefix="fa")).add_to(m)
-    return m
-
-# On affiche la carte cachée
-m = generate_map()
-col_map, col_legend = st.columns([5, 1])
-with col_map:
+    
     map_output = st_folium(m, height=450, use_container_width=True)
+
 with col_legend:
     st.markdown("**Légende**")
     for cepage, color in COLOR_MAP.items():
