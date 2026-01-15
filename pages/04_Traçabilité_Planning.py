@@ -7,8 +7,8 @@ from datetime import datetime, date, timedelta
 import os
 
 # --- CONFIGURATION DE LA PAGE ---
-st.set_page_config(layout="wide", page_title="Pilotage & Traçabilité")
-st.title("🍇 Pilotage du Vignoble - La Gauphine")
+st.set_page_config(layout="wide", page_title="Pilotage & Traçabilité", page_icon="🍇")
+st.title("🍇 Pilotage du Vignoble ")
 
 CSV_FILE = "data_itk.csv"
 
@@ -16,49 +16,184 @@ CSV_FILE = "data_itk.csv"
 
 @st.cache_data
 def get_static_data():
+    # J'ai ajouté tes nouveaux cépages ici (Albarino, Cabernet Franc)
     COLOR_MAP = {
-        "Viognier": "blue", "Chardonnay": "orange", "Syrah": "red",
-        "Grenache": "darkred", "Marselan": "purple", "Merlot": "darkblue", "Caladoc": "pink"
+        "Viognier": "blue", 
+        "Chardonnay": "orange", 
+        "Syrah": "red",
+        "Grenache": "darkred", 
+        "Marselan": "purple", 
+        "Merlot": "darkblue", 
+        "Caladoc": "pink",
+        "Albarino": "#00a8ff",      # Bleu clair
+        "Cabernet Franc": "#c0392b", # Rouge brique
+        "Autre": "gray"
     }
 
     DATA_PARCELLES = {
-        "VIGA03": {
+        "P_00": {
             "nom": "Syrah Isabelle", "cepage": "Syrah", "surface": 0.56, "annee": 2019,
-            "lat": 43.4296, "lon": 3.0925,
+            "lat": 43.4290, "lon": 3.0930,
             "geometry": {"type": "Polygon", "coordinates": [[[3.092493, 43.429614], [3.092055, 43.428946], [3.093490, 43.428517], [3.093604, 43.428660], [3.093541, 43.428766], [3.093464, 43.428844], [3.093363, 43.428914], [3.093242, 43.428914], [3.093128, 43.428932], [3.092595, 43.429582], [3.092493, 43.429614]]]}
         },
-        "VIGA_PL1": {
-            "nom": "La Plaine 1 (Nord-Est)", "cepage": "Viognier", "surface": 0.50, "annee": 2015, "lat": 43.4289, "lon": 3.0930,
-            "geometry": {"type": "Polygon", "coordinates": [[[3.092493, 43.429614], [3.092055, 43.428946], [3.093490, 43.428517], [3.093604, 43.428660], [3.093541, 43.428766], [3.093464, 43.428844], [3.093363, 43.428914], [3.093242, 43.428914], [3.093128, 43.428932], [3.092595, 43.429582], [3.092493, 43.429614]]]}
-        },
-        "VIGA_PL2": {
-            "nom": "La Plaine 2 (Centre)", "cepage": "Viognier", "surface": 0.50, "annee": 2015, "lat": 43.4280, "lon": 3.0915,
+        "P_01": {
+            "nom": "Olivette", "cepage": "Syrah", "surface": 2.57, "annee": 2010,
+            "lat": 43.4278, "lon": 3.0920,
             "geometry": {"type": "Polygon", "coordinates": [[[3.091501, 43.429019], [3.091162, 43.428491], [3.091705, 43.428113], [3.091867, 43.428020], [3.091113, 43.426822], [3.091776, 43.426797], [3.092495, 43.426894], [3.092798, 43.427365], [3.093003, 43.427693], [3.093447, 43.428450], [3.092072, 43.428886], [3.091501, 43.429019]]]}
         },
-        "VIGA_PL3": {
-            "nom": "La Plaine 3 (Est)", "cepage": "Viognier", "surface": 0.50, "annee": 2015, "lat": 43.4280, "lon": 3.0938,
+        "P_02": {
+            "nom": "Vio Jardin", "cepage": "Viognier", "surface": 0.86, "annee": 2015,
+            "lat": 43.4280, "lon": 3.0938,
             "geometry": {"type": "Polygon", "coordinates": [[[3.094155, 43.428700], [3.093952, 43.428501], [3.093641, 43.428575], [3.092930, 43.427353], [3.093673, 43.427178], [3.094435, 43.428640], [3.094155, 43.428700]]]}
         },
-        "VIGA_PL4": {
-            "nom": "La Plaine 4 (Ouest)", "cepage": "Viognier", "surface": 0.50, "annee": 2015, "lat": 43.4280, "lon": 3.0905,
+        "P_03": {
+            "nom": "Amandier", "cepage": "Syrah", "surface": 3.29, "annee": 2005,
+            "lat": 43.4280, "lon": 3.0905,
             "geometry": {"type": "Polygon", "coordinates": [[[3.091457, 43.429064], [3.090289, 43.429451], [3.089769, 43.429290], [3.090080, 43.428529], [3.089832, 43.428031], [3.090270, 43.426915], [3.091108, 43.426837], [3.091832, 43.428013], [3.091146, 43.428492], [3.091457, 43.429064]]]}
         },
-        "VIGA_PL5": {
-            "nom": "La Plaine 5 (Sud-Ouest)", "cepage": "Viognier", "surface": 0.50, "annee": 2015, "lat": 43.4280, "lon": 3.0890,
+        "P_04": {
+            "nom": "La Plaine", "cepage": "Autre", "surface": 0.0, "annee": 2000, # A COMPLETER
+            "lat": 43.4280, "lon": 3.0890,
             "geometry": {"type": "Polygon", "coordinates": [[[3.089321, 43.429010], [3.088299, 43.428567], [3.088895, 43.427018], [3.090190, 43.426916], [3.089321, 43.429010]]]}
         },
-        "VIGA01": {"nom": "Vio Jeune JL", "cepage": "Viognier", "surface": 2.70, "annee": 2001, "lat": 43.4225, "lon": 3.0830},
-        "VIGA04": {"nom": "Vio Plantier JL", "cepage": "Viognier", "surface": 2.54, "annee": 2014, "lat": 43.4205, "lon": 3.0850},
-        "VIGA_TR": {"nom": "Travers", "cepage": "Viognier", "surface": 1.90, "annee": 2010, "lat": 43.4195, "lon": 3.0880},
-        "CHGA04": {"nom": "Chardo 11 & 12", "cepage": "Chardonnay", "surface": 7.06, "annee": 2011, "lat": 43.4190, "lon": 3.0800},
-        "CH_OLI": {"nom": "Olivette (Global)", "cepage": "Chardonnay", "surface": 3.33, "annee": 2018, "lat": 43.4180, "lon": 3.0790},
-        "SYCA01": {"nom": "Syrah Plantier", "cepage": "Syrah", "surface": 1.50, "annee": 1999, "lat": 43.4240, "lon": 3.0820},
-        "SYCA02": {"nom": "Syrah Puech", "cepage": "Syrah", "surface": 2.10, "annee": 2005, "lat": 43.4250, "lon": 3.0840},
-        "SYCA03": {"nom": "Syrah Vigne", "cepage": "Syrah", "surface": 3.00, "annee": 2008, "lat": 43.4260, "lon": 3.0815},
-        "GRCA01": {"nom": "Grenache Coste", "cepage": "Grenache", "surface": 1.85, "annee": 2002, "lat": 43.4215, "lon": 3.0780},
-        "MACA01": {"nom": "Marselan", "cepage": "Marselan", "surface": 1.20, "annee": 2019, "lat": 43.4200, "lon": 3.0760},
+        "P_05": {
+            "nom": "Calvet", "cepage": "Autre", "surface": 0.0, "annee": 2000, # A COMPLETER
+            "lat": 43.4275, "lon": 3.0875,
+            "geometry": {"type": "Polygon", "coordinates": [[[3.088196, 43.428506], [3.086920, 43.427882], [3.086347, 43.427288], [3.087222, 43.426985], [3.088785, 43.427053], [3.088196, 43.428506]]]}
+        },
+        "P_06": {
+            "nom": "Syrah du Virage", "cepage": "Syrah", "surface": 0.0, "annee": 2000, # A COMPLETER
+            "lat": 43.4280, "lon": 3.0850,
+            "geometry": {"type": "Polygon", "coordinates": [[[3.084254, 43.428442], [3.084343, 43.428253], [3.085093, 43.427973], [3.086166, 43.427432], [3.086724, 43.427942], [3.085270, 43.428434], [3.085041, 43.428234], [3.084254, 43.428442]]]}
+        },
+        "P_07": {
+            "nom": "Roumanissas", "cepage": "Autre", "surface": 0.0, "annee": 2000, # A COMPLETER
+            "lat": 43.4315, "lon": 3.0930,
+            "geometry": {"type": "Polygon", "coordinates": [[[3.092680, 43.432428], [3.092282, 43.432039], [3.091664, 43.431210], [3.093336, 43.430661], [3.093831, 43.431418], [3.093482, 43.432065], [3.092680, 43.432428]]]}
+        },
+        "P_08": {
+            "nom": "Parcelle Inconnue 8", "cepage": "Autre", "surface": 0.0, "annee": 2000,
+            "lat": 43.4320, "lon": 3.0910,
+            "geometry": {"type": "Polygon", "coordinates": [[[3.090032, 43.432832], [3.089855, 43.432560], [3.091954, 43.431709], [3.092126, 43.431905], [3.090506, 43.432556], [3.090032, 43.432832]]]}
+        },
+        "P_09": {
+            "nom": "Parcelle Inconnue 9", "cepage": "Autre", "surface": 0.0, "annee": 2000,
+            "lat": 43.4315, "lon": 3.0890,
+            "geometry": {"type": "Polygon", "coordinates": [[[3.089312, 43.431234], [3.091130, 43.430625], [3.091943, 43.431654], [3.089708, 43.432425], [3.089406, 43.432350], [3.089156, 43.432134], [3.088823, 43.432119], [3.088109, 43.431714], [3.087859, 43.431237], [3.087849, 43.430950], [3.088041, 43.430651], [3.088204, 43.430287], [3.089411, 43.430613], [3.089191, 43.431156], [3.089312, 43.431234]]]}
+        },
+        "P_10": {
+            "nom": "Syrah du Muscat", "cepage": "Syrah", "surface": 0.63, "annee": 2000,
+            "lat": 43.4298, "lon": 3.0890,
+            "geometry": {"type": "Polygon", "coordinates": [[[3.088852, 43.430357], [3.089367, 43.429193], [3.089635, 43.429314], [3.089829, 43.429538], [3.089472, 43.430497], [3.088852, 43.430357]]]}
+        },
+        "P_11": {
+            "nom": "Syrah Hébram", "cepage": "Syrah", "surface": 0.0, "annee": 2000, # A COMPLETER
+            "lat": 43.4296, "lon": 3.0888,
+            "geometry": {"type": "Polygon", "coordinates": [[[3.088275, 43.430194], [3.088803, 43.429049], [3.089331, 43.429209], [3.088808, 43.430325], [3.088275, 43.430194]]]}
+        },
+        "P_12": {
+            "nom": "Hébram", "cepage": "Viognier", "surface": 2.69, "annee": 2015,
+            "lat": 43.4295, "lon": 3.0870,
+            "geometry": {"type": "Polygon", "coordinates": [[[3.087353, 43.430411], [3.086794, 43.430547], [3.086508, 43.430276], [3.087129, 43.429710], [3.087542, 43.429046], [3.086917, 43.428733], [3.086354, 43.428368], [3.086389, 43.428112], [3.086688, 43.428010], [3.088661, 43.428963], [3.087908, 43.430773], [3.087824, 43.430769], [3.087617, 43.430450], [3.087353, 43.430411]]]}
+        },
+        "P_13": {
+            "nom": "Caravane", "cepage": "Grenache", "surface": 1.34, "annee": 2002,
+            "lat": 43.4293, "lon": 3.0855,
+            "geometry": {"type": "Polygon", "coordinates": [[[3.084333, 43.429098], [3.085678, 43.428612], [3.086812, 43.429619], [3.086040, 43.429991], [3.085003, 43.429273], [3.084333, 43.429098]]]}
+        },
+        "P_14": {
+            "nom": "Parcelle Inconnue 14", "cepage": "Autre", "surface": 0.0, "annee": 2000,
+            "lat": 43.4260, "lon": 3.0920,
+            "geometry": {"type": "Polygon", "coordinates": [[[3.091024, 43.426774], [3.090444, 43.426208], [3.091976, 43.425536], [3.092239, 43.425391], [3.093237, 43.425931], [3.093889, 43.426517], [3.093726, 43.426906], [3.091813, 43.426695], [3.091024, 43.426774]]]}
+        },
+        "P_15": {
+            "nom": "Trompet", "cepage": "Syrah", "surface": 1.81, "annee": 2000,
+            "lat": 43.4265, "lon": 3.0890,
+            "geometry": {"type": "Polygon", "coordinates": [[[3.090925, 43.426767], [3.088740, 43.426978], [3.087552, 43.426899], [3.087879, 43.426471], [3.088060, 43.426148], [3.090354, 43.426168], [3.090925, 43.426767]]]}
+        },
+        "P_16": {
+            "nom": "Grand Bardou", "cepage": "Syrah", "surface": 5.9, "annee": 2000,
+            "lat": 43.4245, "lon": 3.0885,
+            "geometry": {"type": "Polygon", "coordinates": [[[3.088974, 43.425097], [3.088908, 43.424745], [3.086769, 43.425423], [3.086520, 43.423613], [3.089430, 43.423192], [3.090525, 43.423549], [3.090672, 43.424702], [3.090532, 43.424852], [3.089886, 43.425087], [3.088974, 43.425097]]]}
+        },
+        "P_17": {
+            "nom": "Petit Bardou", "cepage": "Syrah", "surface": 1.95, "annee": 2000,
+            "lat": 43.4245, "lon": 3.0860,
+            "geometry": {"type": "Polygon", "coordinates": [[[3.086704, 43.425448], [3.085900, 43.425574], [3.085835, 43.424915], [3.085053, 43.424900], [3.085314, 43.423681], [3.086296, 43.423334], [3.086378, 43.424044], [3.086557, 43.424107], [3.086704, 43.425448]]]}
+        },
+        "P_18": {
+            "nom": "Phylloxera", "cepage": "Albarino", "surface": 2.12, "annee": 2020,
+            "lat": 43.4250, "lon": 3.0940,
+            "geometry": {"type": "Polygon", "coordinates": [[[3.093742, 43.425859], [3.093026, 43.425451], [3.093087, 43.424737], [3.094175, 43.423974], [3.095034, 43.424253], [3.095071, 43.425029], [3.094447, 43.425694], [3.093742, 43.425859]]]}
+        },
+        "P_19": {
+            "nom": "Parcelle Inconnue 19", "cepage": "Autre", "surface": 0.0, "annee": 2000,
+            "lat": 43.4235, "lon": 3.0950,
+            "geometry": {"type": "Polygon", "coordinates": [[[3.094200, 43.423957], [3.094706, 43.422857], [3.095547, 43.423176], [3.095547, 43.423450], [3.095083, 43.424222], [3.094200, 43.423957]]]}
+        },
+        "P_20": {
+            "nom": "Parcelle Inconnue 20", "cepage": "Autre", "surface": 0.0, "annee": 2000,
+            "lat": 43.4240, "lon": 3.0930,
+            "geometry": {"type": "Polygon", "coordinates": [[[3.091950, 43.424105], [3.091740, 43.423634], [3.094020, 43.423952], [3.093483, 43.424352], [3.091950, 43.424105]]]}
+        },
+        "P_21": {
+            "nom": "Plantier Terret", "cepage": "Syrah", "surface": 2.12, "annee": 2000,
+            "lat": 43.4230, "lon": 3.0930,
+            "geometry": {"type": "Polygon", "coordinates": [[[3.091425, 43.423625], [3.091598, 43.423234], [3.092167, 43.422817], [3.092148, 43.422565], [3.093180, 43.422745], [3.094268, 43.423032], [3.094397, 43.423198], [3.093990, 43.423952], [3.091425, 43.423625]]]}
+        },
+        "P_22": {
+            "nom": "Vio Source Romaine", "cepage": "Viognier", "surface": 0.59, "annee": 2015,
+            "lat": 43.4225, "lon": 3.0940,
+            "geometry": {"type": "Polygon", "coordinates": [[[3.092672, 43.421963], [3.095506, 43.422745], [3.095506, 43.423029], [3.094149, 43.422610], [3.092914, 43.422219], [3.092672, 43.421963]]]}
+        },
+        "P_23": {
+            "nom": "Parcelle Inconnue 23", "cepage": "Autre", "surface": 0.0, "annee": 2000,
+            "lat": 43.4220, "lon": 3.0955,
+            "geometry": {"type": "Polygon", "coordinates": [[[3.094549, 43.422348], [3.094382, 43.421606], [3.096844, 43.421228], [3.096091, 43.421929], [3.096138, 43.422321], [3.095655, 43.422685], [3.094549, 43.422348]]]}
+        },
+        "P_24": {
+            "nom": "Albarino Coural", "cepage": "Albarino", "surface": 0.92, "annee": 2020,
+            "lat": 43.4220, "lon": 3.0965,
+            "geometry": {"type": "Polygon", "coordinates": [[[3.095683, 43.422806], [3.096277, 43.422267], [3.097076, 43.421187], [3.097670, 43.421417], [3.096807, 43.422523], [3.096519, 43.422469], [3.096036, 43.422921], [3.095683, 43.422806]]]}
+        },
+        "P_25": {
+            "nom": "Parcelle Inconnue 25", "cepage": "Autre", "surface": 0.0, "annee": 2000,
+            "lat": 43.4210, "lon": 3.0960,
+            "geometry": {"type": "Polygon", "coordinates": [[[3.095223, 43.421390], [3.095083, 43.420776], [3.096421, 43.420614], [3.096635, 43.420506], [3.096941, 43.421140], [3.095223, 43.421390]]]}
+        },
+        "P_26": {
+            "nom": "Vio Cabane Alazet", "cepage": "Viognier", "surface": 1.3, "annee": 2015,
+            "lat": 43.4210, "lon": 3.0940,
+            "geometry": {"type": "Polygon", "coordinates": [[[3.095167, 43.421363], [3.092900, 43.421680], [3.092529, 43.420627], [3.093198, 43.420992], [3.093764, 43.421073], [3.095046, 43.420776], [3.095167, 43.421363]]]}
+        },
+        "P_27": {
+            "nom": "Merlot Alazet", "cepage": "Merlot", "surface": 0.45, "annee": 2000,
+            "lat": 43.4210, "lon": 3.0922,
+            "geometry": {"type": "Polygon", "coordinates": [[[3.092566, 43.421754], [3.092204, 43.420938], [3.092129, 43.420661], [3.092194, 43.420398], [3.092529, 43.420668], [3.092900, 43.421707], [3.092566, 43.421754]]]}
+        },
+        "P_28": {
+            "nom": "Parcelle Inconnue 28", "cepage": "Autre", "surface": 0.0, "annee": 2000,
+            "lat": 43.4220, "lon": 3.0915,
+            "geometry": {"type": "Polygon", "coordinates": [[[3.090506, 43.422866], [3.090032, 43.422326], [3.092289, 43.421334], [3.092549, 43.421955], [3.092215, 43.422009], [3.091834, 43.422029], [3.090506, 43.422866]]]}
+        },
+        "P_29": {
+            "nom": "CF Brunaude", "cepage": "Cabernet Franc", "surface": 0.69, "annee": 2000,
+            "lat": 43.4205, "lon": 3.0910,
+            "geometry": {"type": "Polygon", "coordinates": [[[3.090520, 43.420806], [3.090084, 43.420165], [3.090976, 43.419834], [3.091607, 43.420412], [3.090520, 43.420806]]]}
+        },
+        "P_30": {
+            "nom": "La Brunaude", "cepage": "Viognier", "surface": 0.83, "annee": 2015,
+            "lat": 43.4218, "lon": 3.0910,
+            "geometry": {"type": "Polygon", "coordinates": [[[3.090075, 43.422267], [3.089926, 43.421964], [3.092118, 43.421073], [3.092286, 43.421356], [3.090075, 43.422267]]]}
+        },
+        "P_31": {
+            "nom": "Plantier Viognier Brunaude", "cepage": "Viognier", "surface": 0.75, "annee": 2015,
+            "lat": 43.4215, "lon": 3.0910,
+            "geometry": {"type": "Polygon", "coordinates": [[[3.089926, 43.421937], [3.089833, 43.421579], [3.091988, 43.420749], [3.092118, 43.421066], [3.089926, 43.421937]]]}
+        }
     }
 
+    # PRODUITS PHYTOS (INCHANGÉ)
     DATA_PRODUITS = {
         "Cuivre Nordox": {"unite": "kg/ha", "dose_ref": 1.25, "cible": "Mildiou", "type": "Biocontrôle", "ift": False},
         "Soufre Mouillable": {"unite": "kg/ha", "dose_ref": 12.5, "cible": "Oïdium", "type": "Biocontrôle", "ift": False},
