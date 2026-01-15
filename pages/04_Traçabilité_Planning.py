@@ -24,9 +24,8 @@ def get_static_data():
         "Grenache": "darkred", 
         "Marselan": "purple", 
         "Merlot": "darkblue", 
-        "Caladoc": "pink",
-        "Albarino": "#00a8ff",      # Bleu clair
-        "Cabernet Franc": "#c0392b", # Rouge brique
+        "Albarino": "#ffe600",      
+        "Cabernet Franc": "#ed55a4", # Rouge brique
         "Autre": "gray"
     }
 
@@ -52,22 +51,22 @@ def get_static_data():
             "geometry": {"type": "Polygon", "coordinates": [[[3.091457, 43.429064], [3.090289, 43.429451], [3.089769, 43.429290], [3.090080, 43.428529], [3.089832, 43.428031], [3.090270, 43.426915], [3.091108, 43.426837], [3.091832, 43.428013], [3.091146, 43.428492], [3.091457, 43.429064]]]}
         },
         "P_04": {
-            "nom": "La Plaine", "cepage": "Autre", "surface": 0.0, "annee": 2000, # A COMPLETER
+            "nom": "La Plaine", "cepage": "Viognier", "surface": 2.05, "annee": 2000, # A COMPLETER
             "lat": 43.4280, "lon": 3.0890,
             "geometry": {"type": "Polygon", "coordinates": [[[3.089321, 43.429010], [3.088299, 43.428567], [3.088895, 43.427018], [3.090190, 43.426916], [3.089321, 43.429010]]]}
         },
         "P_05": {
-            "nom": "Calvet", "cepage": "Autre", "surface": 0.0, "annee": 2000, # A COMPLETER
+            "nom": "Calvet", "cepage": "Viognier", "surface": 2.03, "annee": 2000, # A COMPLETER
             "lat": 43.4275, "lon": 3.0875,
             "geometry": {"type": "Polygon", "coordinates": [[[3.088196, 43.428506], [3.086920, 43.427882], [3.086347, 43.427288], [3.087222, 43.426985], [3.088785, 43.427053], [3.088196, 43.428506]]]}
         },
         "P_06": {
-            "nom": "Syrah du Virage", "cepage": "Syrah", "surface": 0.0, "annee": 2000, # A COMPLETER
+            "nom": "Syrah du Virage", "cepage": "Syrah", "surface": 0.86, "annee": 2000, # A COMPLETER
             "lat": 43.4280, "lon": 3.0850,
             "geometry": {"type": "Polygon", "coordinates": [[[3.084254, 43.428442], [3.084343, 43.428253], [3.085093, 43.427973], [3.086166, 43.427432], [3.086724, 43.427942], [3.085270, 43.428434], [3.085041, 43.428234], [3.084254, 43.428442]]]}
         },
         "P_07": {
-            "nom": "Roumanissas", "cepage": "Autre", "surface": 0.0, "annee": 2000, # A COMPLETER
+            "nom": "Roumanissas", "cepage": "Grenache", "surface": 1.90, "annee": 2000, # A COMPLETER
             "lat": 43.4315, "lon": 3.0930,
             "geometry": {"type": "Polygon", "coordinates": [[[3.092680, 43.432428], [3.092282, 43.432039], [3.091664, 43.431210], [3.093336, 43.430661], [3.093831, 43.431418], [3.093482, 43.432065], [3.092680, 43.432428]]]}
         },
@@ -87,7 +86,7 @@ def get_static_data():
             "geometry": {"type": "Polygon", "coordinates": [[[3.088852, 43.430357], [3.089367, 43.429193], [3.089635, 43.429314], [3.089829, 43.429538], [3.089472, 43.430497], [3.088852, 43.430357]]]}
         },
         "P_11": {
-            "nom": "Syrah Hébram", "cepage": "Syrah", "surface": 0.0, "annee": 2000, # A COMPLETER
+            "nom": "Syrah Hébram", "cepage": "Syrah", "surface": 0.61, "annee": 2000, # A COMPLETER
             "lat": 43.4296, "lon": 3.0888,
             "geometry": {"type": "Polygon", "coordinates": [[[3.088275, 43.430194], [3.088803, 43.429049], [3.089331, 43.429209], [3.088808, 43.430325], [3.088275, 43.430194]]]}
         },
