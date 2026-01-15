@@ -14,7 +14,12 @@ CSV_FILE = "data_itk.csv"
 
 # --- 1. DONNÉES RÉFÉRENTIELS ---
 
-# A. PARCELLES (Tes données géographiques)
+COLOR_MAP = {
+    "Viognier": "blue", "Chardonnay": "orange", "Syrah": "red",
+    "Grenache": "darkred", "Marselan": "purple", "Merlot": "darkblue", "Caladoc": "pink"
+}
+
+# TES VRAIES PARCELLES (Version Complète)
 DATA_PARCELLES = {
     # --- SYRAH ISABELLE ---
     "VIGA03": {
@@ -56,22 +61,28 @@ DATA_PARCELLES = {
     "MACA01": {"nom": "Marselan", "cepage": "Marselan", "surface": 1.20, "annee": 2019, "lat": 43.4200, "lon": 3.0760},
 }
 
-COLOR_MAP = {"Viognier": "blue", "Chardonnay": "orange", "Syrah": "red", "Grenache": "darkred", "Marselan": "purple", "Merlot": "darkblue", "Caladoc": "pink"}
+# Calculs automatiques
+annee_actuelle = datetime.now().year
+for code, data in DATA_PARCELLES.items():
+    data["age"] = annee_actuelle - data["annee"]
+    data["color"] = COLOR_MAP.get(data["cepage"], "gray")
 
-# B. CATALOGUE PRODUITS PHYTOS (Exemples)
-# Dose Ref = Dose Homologuée (Max légal) pour le calcul IFT
+
+# --- NOUVEAU : BASE DE PRODUITS (Pour ton module Phyto) ---
 DATA_PRODUITS = {
     "Soufre Mouillable": {"unite": "kg/ha", "dose_ref": 12.5, "cible": "Oïdium", "type": "Biocontrôle", "ift": False},
     "Cuivre (Bouillie B.)": {"unite": "kg/ha", "dose_ref": 4.0, "cible": "Mildiou", "type": "Biocontrôle", "ift": False},
-    "Fosétyl-Al (Sys)": {"unite": "kg/ha", "dose_ref": 2.5, "cible": "Mildiou", "type": "Conventionnel", "ift": True},
-    "Métrafénone": {"unite": "L/ha", "dose_ref": 0.25, "cible": "Oïdium", "type": "Conventionnel", "ift": True},
+    "Fosétyl-Al (Sys)": {"unite": "kg/ha", "dose_ref": 2.5, "cible": "Mildiou", "type": "Chimie", "ift": True},
+    "Métrafénone": {"unite": "L/ha", "dose_ref": 0.25, "cible": "Oïdium", "type": "Chimie", "ift": True},
     "Insecticide X": {"unite": "L/ha", "dose_ref": 0.5, "cible": "Cicadelle", "type": "Insecticide", "ift": True},
     "Engrais Foliaire": {"unite": "L/ha", "dose_ref": 3.0, "cible": "Nutrition", "type": "Engrais", "ift": False}
 }
 
-# --- 2. FONCTIONS GESTION DONNÉES ---
+
+# --- 2. FONCTIONS DE CHARGEMENT ET SAUVEGARDE ---
 
 def load_data():
+    """Charge les données ou génère le planning basé sur ton EXCEL."""
     if os.path.exists(CSV_FILE):
         try:
             df = pd.read_csv(CSV_FILE)
@@ -80,52 +91,84 @@ def load_data():
             return df.to_dict('records')
         except: return []
     else:
-        # Données par défaut (Ton Excel)
+        # --- GÉNÉRATION DU PLANNING TYPE (Ton Excel COMPLET) ---
         initial_data = []
-        y_start, y_next = 2025, 2026
-        tasks_template = [
-            {"tache": "Nettoyage Goutte-à-goutte", "cat": "Irrigation", "start": date(y_start, 11, 10), "end": date(y_start, 12, 15), "color": "#3498db", "statut": "Fini"},
-            {"tache": "Enherbement", "cat": "Mécanique", "start": date(y_start, 11, 15), "end": date(y_start, 11, 30), "color": "#2ecc71", "statut": "Fini"},
-            {"tache": "Prétaille", "cat": "Mécanique", "start": date(y_start, 11, 20), "end": date(y_start, 12, 15), "color": "#f1c40f", "statut": "Fini"},
-            {"tache": "Taille & Tirage", "cat": "Manuelle", "start": date(y_start, 11, 25), "end": date(y_next, 2, 28), "color": "#e74c3c", "statut": "En cours"},
-            {"tache": "Epandage Compost", "cat": "Fertilisation", "start": date(y_start, 12, 1), "end": date(y_next, 1, 15), "color": "#8d6e63", "statut": "Fini"},
-            {"tache": "Sécaille/Attachage", "cat": "Manuelle", "start": date(y_start, 12, 10), "end": date(y_next, 3, 15), "color": "#9b59b6", "statut": "En cours"},
-            {"tache": "Suspente Goutte-à-goutte", "cat": "Irrigation", "start": date(y_next, 1, 5), "end": date(y_next, 3, 30), "color": "#3498db", "statut": "A faire"},
-            {"tache": "Epandage Engrais", "cat": "Fertilisation", "start": date(y_next, 1, 25), "end": date(y_next, 2, 15), "color": "#d35400", "statut": "A faire"},
-            {"tache": "Broyage du bois", "cat": "Mécanique", "start": date(y_next, 2, 1), "end": date(y_next, 3, 1), "color": "#e67e22", "statut": "A faire"},
-            {"tache": "Désherbage", "cat": "Traitements", "start": date(y_next, 2, 15), "end": date(y_next, 3, 20), "color": "#27ae60", "statut": "Planifié"},
-        ]
+        y_start = 2025
+        y_next = 2026
+        
         for code in DATA_PARCELLES.keys():
+            # Liste des tâches copiées de ton planning image
+            tasks_template = [
+                {"tache": "Nettoyage Goutte-à-goutte", "cat": "Irrigation", "start": date(y_start, 11, 10), "end": date(y_start, 12, 15), "color": "#3498db", "statut": "Fini"},
+                {"tache": "Enherbement", "cat": "Mécanique", "start": date(y_start, 11, 15), "end": date(y_start, 11, 30), "color": "#2ecc71", "statut": "Fini"},
+                {"tache": "Prétaille", "cat": "Mécanique", "start": date(y_start, 11, 20), "end": date(y_start, 12, 15), "color": "#f1c40f", "statut": "Fini"},
+                {"tache": "Taille & Tirage du bois", "cat": "Manuelle", "start": date(y_start, 11, 25), "end": date(y_next, 2, 28), "color": "#e74c3c", "statut": "En cours"},
+                {"tache": "Epandage Compost", "cat": "Fertilisation", "start": date(y_start, 12, 1), "end": date(y_next, 1, 15), "color": "#8d6e63", "statut": "Fini"},
+                {"tache": "Entretien Palissage", "cat": "Manuelle", "start": date(y_start, 12, 10), "end": date(y_next, 3, 15), "color": "#9b59b6", "statut": "En cours"},
+                {"tache": "Suspente Goutte-à-goutte", "cat": "Irrigation", "start": date(y_next, 1, 5), "end": date(y_next, 3, 30), "color": "#3498db", "statut": "A faire"},
+                {"tache": "Epandage Engrais", "cat": "Fertilisation", "start": date(y_next, 1, 25), "end": date(y_next, 2, 15), "color": "#d35400", "statut": "A faire"},
+                {"tache": "Broyage du bois", "cat": "Mécanique", "start": date(y_next, 2, 1), "end": date(y_next, 3, 1), "color": "#e67e22", "statut": "A faire"},
+                {"tache": "Désherbage", "cat": "Traitements", "start": date(y_next, 2, 15), "end": date(y_next, 3, 20), "color": "#27ae60", "statut": "Planifié"},
+            ]
+            
             for i, t in enumerate(tasks_template):
                 initial_data.append({
-                    "id": f"{code}_init_{i}", "parcelle_id": code, "tache": t["tache"], "categorie": t["cat"], 
-                    "start": t["start"], "end": t["end"], "statut": t["statut"], "cadence": 1.0, "jours_estimes": 0.0,
-                    "materiel": "Standard", "color_hex": t["color"], "ift_value": 0.0 # Nouveau champ IFT
+                    "id": f"{code}_init_{i}", 
+                    "parcelle_id": code, 
+                    "tache": t["tache"], 
+                    "categorie": t["cat"], 
+                    "start": t["start"], 
+                    "end": t["end"],
+                    "statut": t["statut"], 
+                    "cadence": 1.0, 
+                    "jours_estimes": 0.0,
+                    "materiel": "Standard", 
+                    "color_hex": t["color"],
+                    "ift_value": 0.0 # J'ajoute juste ça pour que le phyto marche
                 })
         return initial_data
 
 def save_data():
+    """Sauvegarde les données dans le fichier CSV."""
     if "db_itk" in st.session_state:
         pd.DataFrame(st.session_state.db_itk).to_csv(CSV_FILE, index=False)
 
+
+# --- 3. INITIALISATION ---
 if "db_itk" not in st.session_state:
     st.session_state.db_itk = load_data()
 
 
-# --- 3. CARTE ---
+# --- 4. CARTE (Ton code avec GeoJSON qui marche) ---
 st.subheader("🗺️ Carte du Vignoble")
+
 col_map, col_legend = st.columns([5, 1])
+
 with col_map:
     avg_lat = sum([d['lat'] for d in DATA_PARCELLES.values()]) / len(DATA_PARCELLES)
     avg_lon = sum([d['lon'] for d in DATA_PARCELLES.values()]) / len(DATA_PARCELLES)
+    
     m = folium.Map(location=[avg_lat, avg_lon], zoom_start=15)
     folium.TileLayer(tiles='https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}', attr='Esri', name='Esri Satellite', overlay=False, control=True).add_to(m)
+
     for code, info in DATA_PARCELLES.items():
         if "geometry" in info:
-            folium.GeoJson(info["geometry"], style_function=lambda x, color=DATA_PARCELLES[code].get("color", "gray"): {'fillColor': color, 'color': color, 'weight': 2, 'fillOpacity': 0.4}).add_to(m)
-        folium.Marker([info["lat"], info["lon"]], popup=info["nom"], icon=folium.Icon(color=DATA_PARCELLES[code].get("color", "gray"), icon="leaf", prefix="fa")).add_to(m)
-    map_output = st_folium(m, height=450, use_container_width=True)
+            folium.GeoJson(
+                info["geometry"],
+                style_function=lambda x, color=info.get("color", "gray"): {'fillColor': color, 'color': color, 'weight': 2, 'fillOpacity': 0.4},
+                tooltip=f"{info['nom']} ({info['surface']} ha)"
+            ).add_to(m)
+        folium.Marker([info["lat"], info["lon"]], popup=f"<b>{info['nom']}</b>", icon=folium.Icon(color=info.get("color", "gray"), icon="leaf", prefix="fa")).add_to(m)
 
+    map_output = st_folium(m, height=500, use_container_width=True)
+
+with col_legend:
+    st.markdown("**Légende**")
+    for cepage, color in COLOR_MAP.items():
+        st.markdown(f"<span style='color:{color};'>■</span> {cepage}", unsafe_allow_html=True)
+
+
+# --- 5. ONGLETS DE GESTION ---
 selected_code_map = None
 if map_output["last_object_clicked"]:
     lat_clic = map_output["last_object_clicked"]["lat"]
@@ -134,199 +177,208 @@ if map_output["last_object_clicked"]:
             selected_code_map = code
             break
 
-# --- 4. ONGLETS DE GESTION ---
 st.divider()
-# AJOUT D'UN NOUVEL ONGLET SPECIFIQUE "TRAITEMENTS & IFT"
-tab_view, tab_plan, tab_phyto, tab_stats, tab_data = st.tabs(["🔍 Détail Parcelle", "🚜 Planification Groupée", "🧪 Traitements & IFT", "📊 Bilan", "🗃️ Data"])
+# J'ajoute juste l'onglet "Traitements" au milieu
+tab_view, tab_plan, tab_phyto, tab_stats, tab_data = st.tabs(["🔍 Détail & Modif", "🚜 Planif Groupée", "🧪 Traitements Phyto", "📊 Stats", "🗃️ Data"])
 
-# =========================================================
-# ONGLET : CALCULATEUR DE TRAITEMENTS (NOUVEAU !)
-# =========================================================
-with tab_phyto:
-    st.subheader("🧪 Calculateur de Bouillie & Traçabilité Phyto")
-    
-    col_calc, col_ift = st.columns([1.5, 1])
-    
-    # --- PARTIE GAUCHE : LE CALCULATEUR ---
-    with col_calc:
-        st.markdown("#### 1. Préparation du chantier")
-        with st.form("phyto_form"):
-            # A. Sélection Parcelles
-            sel_parcelles = st.multiselect("Parcelles à traiter", options=DATA_PARCELLES.keys(), format_func=lambda x: DATA_PARCELLES[x]['nom'])
-            
-            # Calcul Surface
-            surf_totale = sum([DATA_PARCELLES[p]['surface'] for p in sel_parcelles])
-            st.info(f"📐 Surface à traiter : **{surf_totale:.2f} ha**")
-            
-            c1, c2 = st.columns(2)
-            with c1:
-                date_traitement = st.date_input("Date", date.today())
-                nom_traitement = st.text_input("Nom (ex: T2 Mildiou)", "T1 Mildiou/Oïdium")
-            with c2:
-                vol_cuve = st.number_input("Volume Cuve (L)", value=1000)
-                vol_ha = st.number_input("Volume Bouillie / ha (L/ha)", value=150)
-            
-            # Calcul Volume total de bouillie nécessaire
-            vol_total_bouillie = surf_totale * vol_ha
-            nb_cuves = vol_total_bouillie / vol_cuve if vol_cuve > 0 else 0
-            
-            st.write("---")
-            st.markdown("#### 2. Composition de la bouillie")
-            st.caption("Sélectionnez les produits et la dose que VOUS appliquez.")
-            
-            # Sélection des produits (Multiselect simple pour commencer)
-            prods_selected = st.multiselect("Produits", options=DATA_PRODUITS.keys())
-            
-            # Dictionnaire pour stocker les calculs
-            details_produits = []
-            ift_total_traitement = 0.0
-            
-            if prods_selected:
-                st.markdown("**Dosage par produit :**")
-                for prod in prods_selected:
-                    info_p = DATA_PRODUITS[prod]
-                    cp1, cp2, cp3 = st.columns([2, 1, 1])
-                    
-                    with cp1:
-                        st.write(f"**{prod}** ({info_p['type']})")
-                        st.caption(f"Cible: {info_p['cible']} | Ref: {info_p['dose_ref']} {info_p['unite']}")
-                    
-                    with cp2:
-                        # Input dose utilisateur
-                        dose_user = st.number_input(f"Dose/ha ({info_p['unite']})", value=info_p['dose_ref'], key=f"d_{prod}")
-                    
-                    with cp3:
-                        # Calcul quantité pour la cuve
-                        qte_totale = dose_user * surf_totale
-                        st.metric("Total à mettre", f"{qte_totale:.1f}")
-                    
-                    # Calcul IFT (Si produit soumis à IFT)
-                    ift_prod = 0.0
-                    if info_p['ift'] and info_p['dose_ref'] > 0:
-                        ift_prod = dose_user / info_p['dose_ref']
-                    ift_total_traitement += ift_prod
-                    
-                    details_produits.append(f"{prod}: {dose_user} {info_p['unite']} (IFT {ift_prod:.2f})")
-
-                st.write("---")
-                # Résultat final pour le conducteur du tracteur
-                st.success(f"""
-                🚜 **POUR LE CHAUFFEUR :**
-                * Volume total bouillie : **{vol_total_bouillie:.0f} Litres** ({nb_cuves:.1f} cuves de {vol_cuve}L)
-                * Vitesse avancement (indicatif) : **{(vol_ha/10):.1f} L/min** (si buses standard)
-                """)
-                
-                st.warning(f"📈 **IFT de ce traitement : {ift_total_traitement:.2f}**")
-
-            submit_phyto = st.form_submit_button("✅ Valider et Enregistrer la Traçabilité")
-            
-            if submit_phyto:
-                if not sel_parcelles:
-                    st.error("Sélectionnez au moins une parcelle.")
-                else:
-                    ts = datetime.now().timestamp()
-                    str_details = " | ".join(details_produits)
-                    
-                    for pid in sel_parcelles:
-                        new_entry = {
-                            "id": f"{pid}_phyto_{ts}",
-                            "parcelle_id": pid,
-                            "tache": nom_traitement,
-                            "categorie": "Traitements", # Catégorie fixe
-                            "start": date_traitement,
-                            "end": date_traitement, # Dure 1 jour
-                            "statut": "Fini", # On considère que c'est fait si on le rentre
-                            "cadence": vol_ha, # On détourne ce champ pour stocker le Vol/ha
-                            "jours_estimes": 0.5,
-                            "materiel": f"Vol: {vol_total_bouillie}L - Mix: {str_details}",
-                            "color_hex": "#8e44ad", # Violet pour les phytos
-                            "ift_value": ift_total_traitement # On stocke l'IFT calculated
-                        }
-                        st.session_state.db_itk.append(new_entry)
-                    
-                    save_data()
-                    st.success(f"Traitement enregistré sur {len(sel_parcelles)} parcelles ! IFT ajouté.")
-                    st.rerun()
-
-    # --- PARTIE DROITE : STATISTIQUES IFT ---
-    with col_ift:
-        st.markdown("#### 📊 Suivi IFT par Parcelle")
-        
-        df_all = pd.DataFrame(st.session_state.db_itk)
-        if not df_all.empty and "ift_value" in df_all.columns:
-            # On remplit les NaN
-            df_all["ift_value"] = df_all["ift_value"].fillna(0.0)
-            
-            # Groupement par parcelle
-            ift_per_parcelle = df_all.groupby("parcelle_id")["ift_value"].sum().reset_index()
-            # Ajout des noms
-            ift_per_parcelle["Nom"] = ift_per_parcelle["parcelle_id"].apply(lambda x: DATA_PARCELLES.get(x, {}).get("nom", x))
-            
-            # Graphique
-            fig_ift = px.bar(
-                ift_per_parcelle, x="Nom", y="ift_value", 
-                title="IFT Cumulé (H/F/I)",
-                labels={"ift_value": "IFT Total", "Nom": ""},
-                color="ift_value", color_continuous_scale="Reds"
-            )
-            st.plotly_chart(fig_ift, use_container_width=True)
-            
-            # Petit tableau récap
-            st.dataframe(ift_per_parcelle[["Nom", "ift_value"]].sort_values("ift_value", ascending=False), hide_index=True)
-        else:
-            st.info("Aucun traitement enregistré avec calcul IFT.")
-
-# =========================================================
-# LES AUTRES ONGLETS (VUE, PLANIF, STATS) RESTENT SIMILAIRES
-# =========================================================
-
-# ONGLET 1 : DÉTAIL (Similaire mais enrichi affichage IFT)
+# ONGLET 1 : DÉTAIL & MODIFICATION (TA VERSION PRÉFÉRÉE)
 with tab_view:
     if selected_code_map:
         parcelle = DATA_PARCELLES[selected_code_map]
-        st.markdown(f"### {parcelle['nom']}")
+        st.markdown(f"### 🍇 {parcelle['nom']} <span style='font-size:0.7em; color:gray'>({parcelle['cepage']} - {parcelle['surface']} ha)</span>", unsafe_allow_html=True)
+        
         df_global = pd.DataFrame(st.session_state.db_itk)
-        # Sécurisation colonnes
+        
+        # Sécurisation
         for col in ["color_hex", "categorie", "materiel", "cadence", "jours_estimes", "statut", "ift_value"]:
             if col not in df_global.columns: df_global[col] = None
-        df_global = df_global.fillna(value={"color_hex":"#ccc", "ift_value":0.0})
+        df_global = df_global.fillna(value={"color_hex":"#3498db", "ift_value":0.0})
+            
+        df_global["start"] = pd.to_datetime(df_global["start"])
+        df_global["end"] = pd.to_datetime(df_global["end"])
         
         df_filtered = df_global[df_global["parcelle_id"] == selected_code_map].copy()
-        df_filtered["start"] = pd.to_datetime(df_filtered["start"])
-        df_filtered["end"] = pd.to_datetime(df_filtered["end"])
 
         if not df_filtered.empty:
-            fig = px.timeline(df_filtered, x_start="start", x_end="end", y="tache", color="categorie", hover_data=["materiel", "ift_value"])
-            fig.update_yaxes(autorange="reversed")
+            color_map_gantt = {row["tache"]: row["color_hex"] for index, row in df_filtered.iterrows()}
+            fig = px.timeline(
+                df_filtered, x_start="start", x_end="end", y="tache", color="tache",
+                color_discrete_map=color_map_gantt,
+                hover_data=["statut", "categorie", "jours_estimes", "ift_value"], title="Planning"
+            )
+            fig.update_yaxes(autorange="reversed", title="")
             st.plotly_chart(fig, use_container_width=True)
             
-            # Affichage IFT Parcelle
-            total_ift = df_filtered["ift_value"].sum()
-            st.metric("IFT Cumulé Parcelle", f"{total_ift:.2f}")
+            st.divider()
+            
+            # --- TON SYSTEME DE MODIFICATION QUE TU AIMAIS BIEN ---
+            st.subheader("✏️ Modifier une intervention")
+            task_options = df_filtered.to_dict('records')
+            
+            def format_func(task):
+                d = task['start'].strftime('%d/%m') if isinstance(task['start'], (datetime, pd.Timestamp)) else str(task['start'])
+                return f"{task['tache']} ({d}) - {task['statut']}"
 
-# ONGLET 2 : PLANIFICATION (Standard)
+            selected_task = st.selectbox("Choisir la tâche :", task_options, format_func=format_func)
+            
+            if selected_task:
+                real_index = -1
+                for idx, item in enumerate(st.session_state.db_itk):
+                    if item["id"] == selected_task["id"]:
+                        real_index = idx
+                        break
+                
+                with st.form(key="edit_task_form"):
+                    c1, c2, c3 = st.columns(3)
+                    with c1:
+                        new_statut = st.selectbox("Statut", ["Planifié", "A faire", "En cours", "Fini"], index=["Planifié", "A faire", "En cours", "Fini"].index(selected_task["statut"]))
+                        new_color = st.color_picker("Couleur", selected_task["color_hex"])
+                    with c2:
+                        d_s = selected_task["start"] if isinstance(selected_task["start"], date) else selected_task["start"].date()
+                        d_e = selected_task["end"] if isinstance(selected_task["end"], date) else selected_task["end"].date()
+                        new_start = st.date_input("Début", d_s)
+                        new_end = st.date_input("Fin", d_e)
+                    with c3:
+                        new_mat = st.text_input("Matériel", value=str(selected_task["materiel"]))
+                        del_chk = st.checkbox("Supprimer ?")
+
+                    if st.form_submit_button("Enregistrer"):
+                        if del_chk:
+                            del st.session_state.db_itk[real_index]
+                            st.success("Supprimé !")
+                        else:
+                            st.session_state.db_itk[real_index].update({
+                                "statut": new_statut, "color_hex": new_color,
+                                "start": new_start, "end": new_end, "materiel": new_mat
+                            })
+                            st.success("Modifié !")
+                        save_data()
+                        st.rerun()
+        else:
+            st.info("Rien ici.")
+    else:
+        st.info("👆 Cliquez sur une parcelle.")
+
+# ONGLET 2 : PLANIF GROUPÉE (CODE INCHANGÉ)
 with tab_plan:
-    st.info("ℹ️ Pour les traitements phytos, utilisez l'onglet spécifique '🧪 Traitements & IFT'. Pour les autres travaux (Taille, Sol...), c'est ici.")
-    # (Je garde le code précédent simplifié pour ne pas surcharger)
+    st.subheader("🛠️ Ajouter une intervention (Sauf Phyto)")
     c_g, c_d = st.columns([1, 2])
     with c_g:
-        sel_ids = st.multiselect("Parcelles", options=DATA_PARCELLES.keys(), format_func=lambda x: DATA_PARCELLES[x]['nom'], key="plan_sel")
-    with c_d:
-        with st.form("bulk_std"):
-            nt = st.text_input("Tâche")
-            if st.form_submit_button("Ajouter"):
-                ts = datetime.now().timestamp()
-                for pid in sel_ids:
-                    st.session_state.db_itk.append({"id": f"{pid}_{ts}", "parcelle_id": pid, "tache": nt, "categorie": "Autre", "start": date.today(), "end": date.today(), "statut": "Planifié", "color_hex": "#95a5a6", "ift_value": 0.0})
-                save_data()
-                st.rerun()
+        sel_ids = st.multiselect("Parcelles", options=DATA_PARCELLES.keys(), default=[selected_code_map] if selected_code_map else [], format_func=lambda x: DATA_PARCELLES[x]['nom'])
+        surf = sum([DATA_PARCELLES[p]['surface'] for p in sel_ids])
+        st.caption(f"Surface: {surf:.2f} ha")
+        cad = st.number_input("Cadence (h/ha)", 0.1, 100.0, 10.0)
+        nb_p = st.number_input("Nb Pers", 1, 50, 1)
+        j_est = (surf * cad) / (nb_p * 6)
+        st.info(f"⏳ **{j_est:.1f} jours**")
 
-# ONGLET 4 : STATS
+    with c_d:
+        with st.form("bulk"):
+            c1, c2 = st.columns(2)
+            with c1:
+                n_t = st.text_input("Tâche", "Ebourgeonnage")
+                n_c = st.selectbox("Catégorie", ["Manuelle", "Mécanique", "Traitements"])
+                n_col = st.color_picker("Couleur", "#2ecc71")
+            with c2:
+                n_m = st.text_input("Matériel")
+                n_s = st.selectbox("Statut", ["Planifié", "A faire", "En cours", "Fini"])
+            d1 = st.date_input("Début", date.today())
+            d2 = st.date_input("Fin", d1 + timedelta(days=int(j_est) if j_est>=1 else 1))
+            
+            if st.form_submit_button("Valider"):
+                if sel_ids:
+                    ts = datetime.now().timestamp()
+                    for pid in sel_ids:
+                        st.session_state.db_itk.append({
+                            "id": f"{pid}_{ts}", "parcelle_id": pid, "tache": n_t, "categorie": n_c,
+                            "start": d1, "end": d2, "statut": n_s, "cadence": cad, "jours_estimes": j_est,
+                            "materiel": n_m, "color_hex": n_col, "ift_value": 0.0
+                        })
+                    save_data()
+                    st.success("Ajouté !")
+                    st.rerun()
+
+# --- NOUVEL ONGLET PHYTO (AJOUTÉ ICI) ---
+with tab_phyto:
+    st.subheader("🧪 Calculateur Phyto & IFT")
+    
+    col_calc, col_ift = st.columns([1.5, 1])
+    
+    with col_calc:
+        st.markdown("**1. Préparation**")
+        with st.form("phyto_form"):
+            sel_parc = st.multiselect("Parcelles", options=DATA_PARCELLES.keys(), format_func=lambda x: DATA_PARCELLES[x]['nom'])
+            surf_tot = sum([DATA_PARCELLES[p]['surface'] for p in sel_parc])
+            st.info(f"Surface: {surf_tot:.2f} ha")
+            
+            c1, c2 = st.columns(2)
+            with c1:
+                d_trait = st.date_input("Date", date.today())
+                n_trait = st.text_input("Nom", "T1 Mildiou")
+            with c2:
+                vol_cuve = st.number_input("Cuve (L)", 1000)
+                vol_ha = st.number_input("Bouillie L/ha", 150)
+            
+            vol_tot = surf_tot * vol_ha
+            st.caption(f"Besoin total: {vol_tot:.0f} L")
+            
+            st.markdown("**2. Produits**")
+            prods = st.multiselect("Choisir Produits", options=DATA_PRODUITS.keys())
+            
+            details = []
+            ift_tot = 0.0
+            
+            if prods:
+                for p in prods:
+                    inf = DATA_PRODUITS[p]
+                    col_a, col_b = st.columns([2, 1])
+                    with col_a:
+                        st.write(f"{p} ({inf['dose_ref']} {inf['unite']})")
+                    with col_b:
+                        d_user = st.number_input(f"Dose {p}", value=inf['dose_ref'], key=f"d_{p}")
+                    
+                    qte = d_user * surf_tot
+                    st.write(f"-> Mettre **{qte:.1f} {inf['unite']}** dans la cuve")
+                    
+                    ift_p = (d_user / inf['dose_ref']) if (inf['ift'] and inf['dose_ref']>0) else 0
+                    ift_tot += ift_p
+                    details.append(f"{p}: {d_user}")
+
+                st.warning(f"IFT Traitement : {ift_tot:.2f}")
+
+            if st.form_submit_button("Enregistrer Traitement"):
+                if sel_parc:
+                    ts = datetime.now().timestamp()
+                    str_det = ", ".join(details)
+                    for pid in sel_parc:
+                        st.session_state.db_itk.append({
+                            "id": f"{pid}_phyto_{ts}", "parcelle_id": pid, "tache": n_trait,
+                            "categorie": "Traitements", "start": d_trait, "end": d_trait,
+                            "statut": "Fini", "color_hex": "#8e44ad", "ift_value": ift_tot,
+                            "materiel": f"Vol:{vol_tot}L - {str_det}", "jours_estimes": 0.5
+                        })
+                    save_data()
+                    st.success("Enregistré !")
+                    st.rerun()
+
+    with col_ift:
+        st.markdown("**Suivi IFT**")
+        df_all = pd.DataFrame(st.session_state.db_itk)
+        if not df_all.empty and "ift_value" in df_all.columns:
+            df_all["ift_value"] = df_all["ift_value"].fillna(0.0)
+            res = df_all.groupby("parcelle_id")["ift_value"].sum().reset_index()
+            res["Nom"] = res["parcelle_id"].apply(lambda x: DATA_PARCELLES.get(x, {}).get("nom", x))
+            st.dataframe(res[["Nom", "ift_value"]], hide_index=True)
+            st.plotly_chart(px.bar(res, x="Nom", y="ift_value", color="ift_value"), use_container_width=True)
+
+# ONGLET 4 : STATS (CODE INCHANGÉ)
 with tab_stats:
-    st.write("Statistiques globales (voir onglet IFT pour le phyto).")
     df_all = pd.DataFrame(st.session_state.db_itk)
     if not df_all.empty:
-        st.plotly_chart(px.pie(df_all, names="categorie", title="Répartition des travaux"), use_container_width=True)
+        if "jours_estimes" not in df_all.columns: df_all["jours_estimes"] = 0.0
+        st.metric("Total Heures", f"{df_all['jours_estimes'].sum()*6:.0f} h")
+        st.plotly_chart(px.pie(df_all, names="categorie"), use_container_width=True)
 
+# ONGLET 5 : DATA
 with tab_data:
     st.dataframe(pd.DataFrame(st.session_state.db_itk))
