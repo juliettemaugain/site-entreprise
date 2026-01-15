@@ -3,7 +3,7 @@ import pandas as pd
 import plotly.express as px
 import folium
 from streamlit_folium import st_folium
-from datetime import datetime, date
+from datetime import datetime, date, timedelta
 
 # --- CONFIGURATION DE LA PAGE ---
 st.set_page_config(layout="wide", page_title="Pilotage & Traçabilité")
@@ -51,23 +51,10 @@ if "db_itk" not in st.session_state:
                 "end": date(2026, 2, 28), 
                 "statut": "En cours",
                 "cadence": 0.5,
-                "jours_restants": 5,
+                "jours_estimes": 5.0,
                 "materiel": "Sécateurs élec.",
                 "color_hex": "#3498db"
-            },
-            {
-                "id": f"{code}_2",
-                "parcelle_id": code, 
-                "tache": "Entretien Sol", 
-                "categorie": "Mécanique",
-                "start": date(2026, 3, 10), 
-                "end": date(2026, 3, 25), 
-                "statut": "A faire",
-                "cadence": 4.0,
-                "jours_restants": 1,
-                "materiel": "Tracteur + Interceps",
-                "color_hex": "#f1c40f"
-            },
+            }
         ])
     st.session_state.db_itk = initial_data
 
@@ -100,154 +87,176 @@ with col_legend:
         st.markdown(f"<span style='color:{color};'>●</span> {cepage}", unsafe_allow_html=True)
 
 
-# --- 4. DÉTAILS & GESTION ---
-selected_code = None
-
+# --- LOGIQUE DE SÉLECTION ---
+selected_code_map = None
 if map_output["last_object_clicked"]:
     lat_clic = map_output["last_object_clicked"]["lat"]
     for code, info in DATA_PARCELLES.items():
         if abs(info["lat"] - lat_clic) < 0.0001:
-            selected_code = code
+            selected_code_map = code
             break
 
-if selected_code:
-    parcelle = DATA_PARCELLES[selected_code]
-    
-    # En-tête
-    st.divider()
-    st.markdown(f"## {parcelle['nom']} <span style='font-size:0.6em; color:gray'>({parcelle['cepage']} - {parcelle['surface']} ha)</span>", unsafe_allow_html=True)
 
-    # Préparation des données
-    df_global = pd.DataFrame(st.session_state.db_itk)
-    
-    # Sécurité couleur
-    if "color_hex" not in df_global.columns:
-        df_global["color_hex"] = "#3498db"
-    else:
-        df_global["color_hex"] = df_global["color_hex"].fillna("#3498db")
-    
-    # Dates
-    df_global["start"] = pd.to_datetime(df_global["start"])
-    df_global["end"] = pd.to_datetime(df_global["end"])
-    
-    # Filtre Parcelle
-    df_filtered = df_global[df_global["parcelle_id"] == selected_code].copy()
+# --- 4. ZONES D'ACTIONS (ONGLETS) ---
+st.divider()
 
-    # --- GRAPHIQUE GANTT (CORRIGÉ) ---
-    if not df_filtered.empty:
-        # 1. On crée un "dictionnaire" : Nom de la tâche -> Couleur
-        # Ex: {'Taille': '#3498db', 'Entretien Sol': '#f1c40f'}
-        color_map = {row["tache"]: row["color_hex"] for index, row in df_filtered.iterrows()}
+# On crée deux grands onglets : Consultation (Carte) et Planification (Calculateur)
+tab_view, tab_plan, tab_data = st.tabs(["🔍 Détail Parcelle (Clic Carte)", "🚜 Planification & Calculateur", "📊 Données Brutes"])
+
+# =========================================================
+# ONGLET 1 : VUE DÉTAILLÉE (Comme avant)
+# =========================================================
+with tab_view:
+    if selected_code_map:
+        parcelle = DATA_PARCELLES[selected_code_map]
         
-        # 2. On configure le graphique
-        fig = px.timeline(
-            df_filtered, 
-            x_start="start", x_end="end", y="tache", 
-            color="tache", # IMPORTANT : On distingue par le nom de la tâche
-            color_discrete_map=color_map, # On applique notre dictionnaire de couleurs
-            hover_data=["statut", "categorie", "materiel", "cadence"],
-            title="Planning des interventions"
+        st.markdown(f"### 🍇 {parcelle['nom']} <span style='font-size:0.7em; color:gray'>({parcelle['cepage']} - {parcelle['surface']} ha)</span>", unsafe_allow_html=True)
+
+        # Données
+        df_global = pd.DataFrame(st.session_state.db_itk)
+        if "color_hex" not in df_global.columns: df_global["color_hex"] = "#3498db"
+        else: df_global["color_hex"] = df_global["color_hex"].fillna("#3498db")
+        
+        df_global["start"] = pd.to_datetime(df_global["start"])
+        df_global["end"] = pd.to_datetime(df_global["end"])
+        
+        df_filtered = df_global[df_global["parcelle_id"] == selected_code_map].copy()
+
+        # GANTT
+        if not df_filtered.empty:
+            color_map_gantt = {row["tache"]: row["color_hex"] for index, row in df_filtered.iterrows()}
+            
+            fig = px.timeline(
+                df_filtered, 
+                x_start="start", x_end="end", y="tache", 
+                color="tache",
+                color_discrete_map=color_map_gantt,
+                hover_data=["statut", "categorie", "materiel", "cadence", "jours_estimes"],
+                title="Planning des interventions"
+            )
+            fig.update_yaxes(autorange="reversed", title="")
+            st.plotly_chart(fig, use_container_width=True)
+            
+            # Formulaire de modification rapide (Optionnel ici si on a le planificateur)
+            st.caption("ℹ️ Pour ajouter des tâches sur plusieurs parcelles, utilisez l'onglet 'Planification'.")
+            
+        else:
+            st.info("Aucune intervention sur cette parcelle.")
+    else:
+        st.info("👆 Cliquez sur une parcelle de la carte pour voir son détail.")
+
+
+# =========================================================
+# ONGLET 2 : PLANIFICATION & CALCULATEUR (LE COEUR DE TA DEMANDE)
+# =========================================================
+with tab_plan:
+    st.subheader("🛠️ Ajouter une intervention (Groupée)")
+    
+    col_gauche, col_droite = st.columns([1, 2])
+    
+    # --- PARTIE 1 : PARAMÈTRES DU CALCUL ---
+    with col_gauche:
+        st.markdown("##### 1. Paramètres de chantier")
+        
+        # 1. Sélection des parcelles
+        # On pré-sélectionne la parcelle cliquée sur la carte si elle existe
+        default_selection = [selected_code_map] if selected_code_map else []
+        
+        selected_parcels_ids = st.multiselect(
+            "Sélectionner les parcelles concernées :",
+            options=DATA_PARCELLES.keys(),
+            default=default_selection,
+            format_func=lambda x: f"{DATA_PARCELLES[x]['nom']} ({DATA_PARCELLES[x]['cepage']})"
         )
         
-        fig.update_yaxes(autorange="reversed", title="")
-        st.plotly_chart(fig, use_container_width=True)
-    else:
-        st.info("Aucune intervention enregistrée.")
+        # Calcul surface totale
+        surface_totale = sum([DATA_PARCELLES[pid]['surface'] for pid in selected_parcels_ids])
+        
+        st.write("---")
+        
+        # 2. Paramètres de calcul
+        cadence_input = st.number_input("Cadence (Heures / ha)", min_value=0.1, value=10.0, step=0.5, help="Temps nécessaire pour faire 1 hectare")
+        nb_personnes = st.number_input("Nombre de personnes", min_value=1, value=1, step=1)
+        
+        # CALCUL AUTOMATIQUE
+        heures_totales = surface_totale * cadence_input
+        # Base : 6 heures de travail effectif par jour et par personne
+        jours_estimes_calc = heures_totales / (nb_personnes * 6)
+        
+        # Affichage des résultats du calcul
+        st.info(f"""
+        **Surface Totale :** {surface_totale:.2f} ha
+        **Volume Travail :** {heures_totales:.1f} heures
+        
+        🎯 **ESTIMATION : {jours_estimes_calc:.1f} jours**
+        *(Base 6h/j/pers)*
+        """)
 
-    # --- ONGLETS ---
-    tab_add, tab_edit, tab_data = st.tabs(["➕ Nouvelle Tâche", "✏️ Modifier Tâche", "📊 Données Brutes"])
-
-    # ONGLET 1 : AJOUT
-    with tab_add:
-        with st.form("add_form"):
+    # --- PARTIE 2 : DÉTAILS DE LA TÂCHE ---
+    with col_droite:
+        st.markdown("##### 2. Détails de l'intervention")
+        
+        with st.form("bulk_add_form"):
             c1, c2 = st.columns(2)
             with c1:
-                new_task = st.text_input("Nom de la tâche", placeholder="Ex: Rognage")
-                new_cat = st.selectbox("Catégorie", ["Manuelle", "Mécanique", "Irrigation", "Autre"])
-                new_mat = st.text_input("Matériel nécessaire", placeholder="Ex: Tracteur A + Atomiseur")
-                new_color = st.color_picker("Couleur sur le planning", "#00f900")
+                new_task_name = st.text_input("Nom de l'opération", placeholder="Ex: Ebourgeonnage")
+                new_cat = st.selectbox("Catégorie", ["Manuelle", "Mécanique", "Traitements", "Récolte"])
+                new_color = st.color_picker("Couleur", "#2ecc71")
+            
             with c2:
-                d1 = st.date_input("Début", date.today())
-                d2 = st.date_input("Fin", date.today())
-                new_status = st.selectbox("Statut", ["Planifié", "A faire", "En cours", "Fini"])
-                sc1, sc2 = st.columns(2)
-                new_cadence = sc1.number_input("Cadence (ha/j)", 0.0, 100.0, 1.0)
-                new_rest = sc2.number_input("Jours restants est.", 0.0, 100.0, 1.0)
-
-            if st.form_submit_button("Enregistrer"):
-                new_entry = {
-                    "id": f"{selected_code}_{datetime.now().timestamp()}",
-                    "parcelle_id": selected_code,
-                    "tache": new_task,
-                    "categorie": new_cat,
-                    "start": d1, "end": d2,
-                    "statut": new_status,
-                    "cadence": new_cadence,
-                    "jours_restants": new_rest,
-                    "materiel": new_mat,
-                    "color_hex": new_color
-                }
-                st.session_state.db_itk.append(new_entry)
-                st.success("Ajouté !")
-                st.rerun()
-
-    # ONGLET 2 : MODIFICATION
-    with tab_edit:
-        if df_filtered.empty:
-            st.write("Rien à modifier.")
-        else:
-            task_choice = st.selectbox("Sélectionner l'intervention à modifier :", df_filtered["tache"].unique())
+                new_mat = st.text_input("Matériel", placeholder="Ex: Tracteur, Sécateurs...")
+                new_status = st.selectbox("Statut initial", ["Planifié", "A faire", "En cours", "Fini"])
             
-            # Recherche de la ligne
-            row_to_edit = None
-            index_in_db = -1
-            for idx, item in enumerate(st.session_state.db_itk):
-                if item["parcelle_id"] == selected_code and item["tache"] == task_choice:
-                    row_to_edit = item
-                    index_in_db = idx
-                    break
+            st.write("---")
+            st.markdown("##### 3. Calendrier")
             
-            if row_to_edit:
-                with st.form("edit_form"):
-                    col_a, col_b = st.columns(2)
-                    with col_a:
-                        l_statut = ["Planifié", "A faire", "En cours", "Fini"]
-                        idx_statut = l_statut.index(row_to_edit["statut"]) if row_to_edit["statut"] in l_statut else 0
-                        e_statut = st.selectbox("Statut", l_statut, index=idx_statut)
-                        
-                        l_cat = ["Manuelle", "Mécanique", "Irrigation", "Autre"]
-                        cat_val = row_to_edit.get("categorie", "Autre")
-                        idx_cat = l_cat.index(cat_val) if cat_val in l_cat else 3
-                        e_cat = st.selectbox("Catégorie", l_cat, index=idx_cat)
-
-                        e_mat = st.text_input("Matériel", value=row_to_edit.get("materiel", ""))
-                        e_color = st.color_picker("Couleur", value=row_to_edit.get("color_hex", "#cccccc"))
+            d_col1, d_col2 = st.columns(2)
+            # Date début
+            start_date = d_col1.date_input("Date de début", date.today())
+            
+            # Suggestion de date de fin (Date début + Jours estimés)
+            # On arrondit à l'entier supérieur pour la date
+            jours_arrondis = int(jours_estimes_calc) if jours_estimes_calc >= 1 else 1
+            suggested_end = start_date + timedelta(days=jours_arrondis)
+            
+            end_date = d_col2.date_input(f"Date de fin (Suggérée: {suggested_end})", value=suggested_end)
+            
+            submitted = st.form_submit_button("✅ Valider et Ajouter aux Plannings")
+            
+            if submitted:
+                if not selected_parcels_ids:
+                    st.error("Veuillez sélectionner au moins une parcelle !")
+                else:
+                    # BOUCLE D'AJOUT : On crée une tâche pour CHAQUE parcelle sélectionnée
+                    timestamp_id = datetime.now().timestamp()
+                    count = 0
                     
-                    with col_b:
-                        d_start = row_to_edit["start"]
-                        if isinstance(d_start, pd.Timestamp): d_start = d_start.date()
-                        d_end = row_to_edit["end"]
-                        if isinstance(d_end, pd.Timestamp): d_end = d_end.date()
+                    for pid in selected_parcels_ids:
+                        new_entry = {
+                            "id": f"{pid}_{timestamp_id}", # ID unique
+                            "parcelle_id": pid,
+                            "tache": new_task_name,
+                            "categorie": new_cat,
+                            "start": start_date,
+                            "end": end_date,
+                            "statut": new_status,
+                            "cadence": cadence_input,
+                            "jours_estimes": jours_estimes_calc, # On stocke le calcul
+                            "materiel": new_mat,
+                            "color_hex": new_color
+                        }
+                        st.session_state.db_itk.append(new_entry)
+                        count += 1
+                    
+                    st.success(f"Opération '{new_task_name}' ajoutée sur {count} parcelles avec succès !")
+                    # On ne met pas rerun() ici pour laisser le temps de lire le message, 
+                    # mais Streamlit rechargera au prochain clic.
+                    # Si tu veux forcer le refresh immédiat :
+                    st.rerun()
 
-                        e_d1 = st.date_input("Début", d_start)
-                        e_d2 = st.date_input("Fin", d_end)
-                        
-                        ec1, ec2 = st.columns(2)
-                        e_cadence = ec1.number_input("Cadence (ha/j)", value=float(row_to_edit.get("cadence", 0.0)))
-                        e_rest = ec2.number_input("Jours restants", value=float(row_to_edit.get("jours_restants", 0.0)))
-
-                    if st.form_submit_button("💾 Mettre à jour"):
-                        st.session_state.db_itk[index_in_db].update({
-                            "statut": e_statut, "categorie": e_cat, "materiel": e_mat,
-                            "color_hex": e_color, "start": e_d1, "end": e_d2,
-                            "cadence": e_cadence, "jours_restants": e_rest
-                        })
-                        st.success("Modification enregistrée !")
-                        st.rerun()
-
-    # ONGLET 3 : DATA
-    with tab_data:
-        st.dataframe(df_filtered)
-
-else:
-    st.info("👆 Cliquez sur une parcelle de la carte pour gérer les travaux.")
+# =========================================================
+# ONGLET 3 : DATA
+# =========================================================
+with tab_data:
+    st.dataframe(pd.DataFrame(st.session_state.db_itk))
+    
