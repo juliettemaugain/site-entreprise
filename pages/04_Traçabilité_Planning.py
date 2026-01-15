@@ -10,19 +10,6 @@ import os
 st.set_page_config(layout="wide", page_title="Pilotage & Traçabilité", page_icon="🍇")
 st.title("🍇 Pilotage du Vignoble ")
 
-# --- BOUTON DE RESET (A SUPPRIMER UNE FOIS UTILISÉ) ---
-with st.sidebar:
-    st.header("⚠️ Zone de Danger")
-    if st.button("🔴 RÉINITIALISER TOUTES LES DONNÉES"):
-        # 1. On supprime le fichier CSV s'il existe
-        if os.path.exists("data_itk.csv"):
-            os.remove("data_itk.csv")
-        # 2. On vide la mémoire de l'appli
-        for key in list(st.session_state.keys()):
-            del st.session_state[key]
-        # 3. On recharge la page
-        st.rerun()
-
 CSV_FILE = "data_itk.csv"
 
 # --- 1. DONNÉES RÉFÉRENTIELS ---
