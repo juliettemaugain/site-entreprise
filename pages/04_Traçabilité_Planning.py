@@ -111,6 +111,17 @@ with col_legend:
 
 
 # --- 4. DÉTAILS & GESTION (BAS DE PAGE) ---
+selected_code = None # <--- C'est cette ligne qui manquait !
+
+# On vérifie d'abord si on a cliqué sur la carte
+if map_output["last_object_clicked"]:
+    lat_clic = map_output["last_object_clicked"]["lat"]
+    for code, info in DATA_PARCELLES.items():
+        if abs(info["lat"] - lat_clic) < 0.0001:
+            selected_code = code
+            break
+
+# Maintenant on peut vérifier si selected_code existe
 if selected_code:
     parcelle = DATA_PARCELLES[selected_code]
     
@@ -121,14 +132,12 @@ if selected_code:
     # Préparation des données pour cette parcelle
     df_global = pd.DataFrame(st.session_state.db_itk)
     
-    # --- CORRECTION DU BUG (SÉCURITÉ) ---
-    # Si d'anciennes tâches n'ont pas de couleur, on met du bleu par défaut pour éviter le plantage
+    # --- SÉCURITÉ ANTI-BUG (Si pas de couleur définie) ---
     if "color_hex" not in df_global.columns:
-        df_global["color_hex"] = "#3498db"
+        df_global["color_hex"] = "#3498db" # Bleu par défaut
     else:
-        # Remplit les trous éventuels
         df_global["color_hex"] = df_global["color_hex"].fillna("#3498db")
-    # ------------------------------------
+    # ----------------------------------------------------
 
     # Conversion dates
     df_global["start"] = pd.to_datetime(df_global["start"])
@@ -137,20 +146,17 @@ if selected_code:
     # Filtrer pour la parcelle active
     df_filtered = df_global[df_global["parcelle_id"] == selected_code].copy()
 
-   
     # --- GRAPHIQUE GANTT ---
     if not df_filtered.empty:
-        # On utilise la colonne 'color_hex' pour définir la couleur exacte choisie
         fig = px.timeline(
             df_filtered, 
             x_start="start", x_end="end", y="tache", 
-            color="color_hex", # On utilise la colonne hexadécimale directe
+            color="color_hex", 
             hover_data=["statut", "categorie", "materiel", "cadence"],
             title="Planning des interventions"
         )
-        # Astuce pour que Plotly utilise les codes Hexadécimaux bruts
+        # Force l'utilisation des couleurs hexadécimales
         fig.update_traces(marker=dict(color=df_filtered["color_hex"])) 
-        
         fig.update_yaxes(autorange="reversed", title="")
         st.plotly_chart(fig, use_container_width=True)
     else:
@@ -172,14 +178,13 @@ if selected_code:
                 d1 = st.date_input("Début", date.today())
                 d2 = st.date_input("Fin", date.today())
                 new_status = st.selectbox("Statut", ["Planifié", "A faire", "En cours", "Fini"])
-                # Ligne pour cadences
                 sc1, sc2 = st.columns(2)
                 new_cadence = sc1.number_input("Cadence (ha/j)", 0.0, 100.0, 1.0)
                 new_rest = sc2.number_input("Jours restants est.", 0.0, 100.0, 1.0)
 
             if st.form_submit_button("Enregistrer"):
                 new_entry = {
-                    "id": f"{selected_code}_{datetime.now().timestamp()}", # ID unique
+                    "id": f"{selected_code}_{datetime.now().timestamp()}",
                     "parcelle_id": selected_code,
                     "tache": new_task,
                     "categorie": new_cat,
@@ -199,13 +204,9 @@ if selected_code:
         if df_filtered.empty:
             st.write("Rien à modifier.")
         else:
-            # Liste déroulante pour choisir quelle tâche modifier
-            task_options = df_filtered["tache"].tolist()
-            # On crée un dictionnaire pour retrouver l'ID via le nom (pour l'affichage)
             task_choice = st.selectbox("Sélectionner l'intervention à modifier :", df_filtered["tache"].unique())
             
-            # Récupération de la ligne correspondante dans la "vraie" base (session_state)
-            # On cherche l'index dans la liste principale
+            # Retrouver la ligne dans la base
             row_to_edit = None
             index_in_db = -1
             
@@ -218,19 +219,28 @@ if selected_code:
             if row_to_edit:
                 with st.form("edit_form"):
                     col_a, col_b = st.columns(2)
-                    
-                    # On pré-remplit les champs avec les valeurs actuelles
                     with col_a:
-                        e_statut = st.selectbox("Statut", ["Planifié", "A faire", "En cours", "Fini"], index=["Planifié", "A faire", "En cours", "Fini"].index(row_to_edit["statut"]))
-                        e_cat = st.selectbox("Catégorie", ["Manuelle", "Mécanique", "Irrigation", "Autre"], index=["Manuelle", "Mécanique", "Irrigation", "Autre"].index(row_to_edit.get("categorie", "Autre")))
+                        # Index safe retrieval
+                        l_statut = ["Planifié", "A faire", "En cours", "Fini"]
+                        idx_statut = l_statut.index(row_to_edit["statut"]) if row_to_edit["statut"] in l_statut else 0
+                        e_statut = st.selectbox("Statut", l_statut, index=idx_statut)
+                        
+                        l_cat = ["Manuelle", "Mécanique", "Irrigation", "Autre"]
+                        cat_val = row_to_edit.get("categorie", "Autre")
+                        idx_cat = l_cat.index(cat_val) if cat_val in l_cat else 3
+                        e_cat = st.selectbox("Catégorie", l_cat, index=idx_cat)
+
                         e_mat = st.text_input("Matériel", value=row_to_edit.get("materiel", ""))
                         e_color = st.color_picker("Couleur", value=row_to_edit.get("color_hex", "#cccccc"))
                     
                     with col_b:
-                        # Conversion dates pour le widget
-                        d_start = row_to_edit["start"] if isinstance(row_to_edit["start"], date) else row_to_edit["start"].date()
-                        d_end = row_to_edit["end"] if isinstance(row_to_edit["end"], date) else row_to_edit["end"].date()
+                        # Gestion dates safe
+                        d_start = row_to_edit["start"]
+                        if isinstance(d_start, pd.Timestamp): d_start = d_start.date()
                         
+                        d_end = row_to_edit["end"]
+                        if isinstance(d_end, pd.Timestamp): d_end = d_end.date()
+
                         e_d1 = st.date_input("Début", d_start)
                         e_d2 = st.date_input("Fin", d_end)
                         
@@ -239,16 +249,10 @@ if selected_code:
                         e_rest = ec2.number_input("Jours restants", value=float(row_to_edit.get("jours_restants", 0.0)))
 
                     if st.form_submit_button("💾 Mettre à jour"):
-                        # Mise à jour directe dans la session_state
                         st.session_state.db_itk[index_in_db].update({
-                            "statut": e_statut,
-                            "categorie": e_cat,
-                            "materiel": e_mat,
-                            "color_hex": e_color,
-                            "start": e_d1,
-                            "end": e_d2,
-                            "cadence": e_cadence,
-                            "jours_restants": e_rest
+                            "statut": e_statut, "categorie": e_cat, "materiel": e_mat,
+                            "color_hex": e_color, "start": e_d1, "end": e_d2,
+                            "cadence": e_cadence, "jours_restants": e_rest
                         })
                         st.success("Modification enregistrée !")
                         st.rerun()
