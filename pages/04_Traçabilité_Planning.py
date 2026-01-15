@@ -102,7 +102,7 @@ def load_data():
             {"tache": "Suspente Goutte-à-goutte", "cat": "Irrigation", "start": date(y_next, 1, 5), "end": date(y_next, 3, 30), "color": "#3498db", "statut": "A faire"},
             {"tache": "Epandage Engrais", "cat": "Fertilisation", "start": date(y_next, 1, 25), "end": date(y_next, 2, 15), "color": "#d35400", "statut": "A faire"},
             {"tache": "Broyage du bois", "cat": "Mécanique", "start": date(y_next, 2, 1), "end": date(y_next, 3, 1), "color": "#e67e22", "statut": "A faire"},
-            {"tache": "Désherbage", "cat": "Traitements", "start": date(y_next, 2, 15), "end": date(y_next, 3, 20), "color": "#27ae60", "statut": "Planifié"},
+        
         ]
         for code in DATA_PARCELLES.keys():
             for i, t in enumerate(tasks_template):
@@ -278,22 +278,35 @@ with tab_phyto:
     st.subheader("🧪 Traitements & Protection du Vignoble")
     
     # 1. VISUALISATION DÉDIÉE (Gantt Phyto Uniquement)
-    df_all_phyto = pd.DataFrame(st.session_state.db_itk)
-    if not df_all_phyto.empty and "categorie" in df_all_phyto.columns:
-        df_phyto_only = df_all_phyto[df_all_phyto["categorie"] == "Traitements"].copy()
-        if not df_phyto_only.empty:
-            df_phyto_only["start"] = pd.to_datetime(df_phyto_only["start"])
-            df_phyto_only["end"] = pd.to_datetime(df_phyto_only["end"])
-            # Ajout nom parcelle
-            df_phyto_only["Parcelle"] = df_phyto_only["parcelle_id"].apply(lambda x: DATA_PARCELLES.get(x, {}).get("nom", x))
+  st.markdown("##### 📅 Calendrier des Traitements")
             
-            st.markdown("##### 📅 Calendrier des Traitements")
-            fig_p = px.timeline(df_phyto_only, x_start="start", x_end="end", y="Parcelle", color="tache", title="", height=300)
+            # Amélioration du graphique
+            fig_p = px.timeline(
+                df_phyto_only, 
+                x_start="start", x_end="end", 
+                y="Parcelle", 
+                color="tache", # Couleur différente par traitement
+                text="tache",    # Affiche le nom T1, T2 directement sur la barre
+                title="", 
+                height=350 + (len(df_phyto_only["Parcelle"].unique()) * 20) # Hauteur adaptative selon le nb de parcelles
+            )
+            
+            # Réglages de l'axe et de l'échelle (Autoscale amélioré)
+            fig_p.update_layout(
+                xaxis=dict(
+                    title="Date",
+                    tickformat="%d/%m", # Format jour/mois plus lisible
+                    range=[date(date.today().year, 1, 1), date(date.today().year, 12, 31)] # Fixe la vue sur l'année en cours par défaut
+                ),
+                yaxis=dict(title=""),
+                showlegend=True
+            )
+            
+            # Force l'ordre des parcelles et inverse l'axe Y pour avoir le haut en haut
+            fig_p.update_yaxes(autorange="reversed")
+            
             st.plotly_chart(fig_p, use_container_width=True)
-        else:
-            st.info("Aucun traitement enregistré.")
-    
-    st.divider()
+
 
     # 2. CALCULATEUR & SAISIE
     col_left, col_right = st.columns([1.2, 1])
