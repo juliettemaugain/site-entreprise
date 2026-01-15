@@ -7,7 +7,7 @@ from datetime import datetime, date, timedelta
 
 # --- CONFIGURATION DE LA PAGE ---
 st.set_page_config(layout="wide", page_title="Pilotage & Traçabilité")
-st.title("🍇 Pilotage du Vignoble - La Gauphine")
+st.title("🍇 Pilotage du Vignoble")
 
 # --- 1. DONNÉES (PARCELLES) ---
 COLOR_MAP = {
@@ -38,7 +38,6 @@ DATA_PARCELLES = {
             [43.4296143369082, 3.0924931192498377]
         ]
     },
-    "VIGA03": {"nom": "Vio Fournic bas JL", "cepage": "Viognier", "surface": 2.28, "annee": 1997, "lat": 43.4210, "lon": 3.0810},
     "VIGA01": {"nom": "Vio Jeune JL", "cepage": "Viognier", "surface": 2.70, "annee": 2001, "lat": 43.4225, "lon": 3.0830},
     "VIGA04": {"nom": "Vio Plantier JL", "cepage": "Viognier", "surface": 2.54, "annee": 2014, "lat": 43.4205, "lon": 3.0850},
     "VIGA_PL": {"nom": "La Plaine", "cepage": "Viognier", "surface": 2.50, "annee": 2015, "lat": 43.4230, "lon": 3.0860},
