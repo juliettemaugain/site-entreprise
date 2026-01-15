@@ -12,7 +12,7 @@ st.title("🍇 Pilotage du Vignoble - La Gauphine")
 
 CSV_FILE = "data_itk.csv"
 
-# --- 1. DONNÉES RÉFÉRENTIELS (CACHE DATA UNIQUEMENT SUR LES DICT) ---
+# --- 1. DONNÉES RÉFÉRENTIELS ---
 
 @st.cache_data
 def get_static_data():
@@ -102,7 +102,7 @@ def load_data():
             {"tache": "Suspente Goutte-à-goutte", "cat": "Irrigation", "start": date(y_next, 1, 5), "end": date(y_next, 3, 30), "color": "#3498db", "statut": "A faire"},
             {"tache": "Epandage Engrais", "cat": "Fertilisation", "start": date(y_next, 1, 25), "end": date(y_next, 2, 15), "color": "#d35400", "statut": "A faire"},
             {"tache": "Broyage du bois", "cat": "Mécanique", "start": date(y_next, 2, 1), "end": date(y_next, 3, 1), "color": "#e67e22", "statut": "A faire"},
-        
+            # Desherbage supprimé ici comme demandé
         ]
         for code in DATA_PARCELLES.keys():
             for i, t in enumerate(tasks_template):
@@ -192,7 +192,7 @@ with tab_view:
             st.caption("Pour modifier/supprimer une tâche standard :")
             
             # --- MODIFICATION STANDARD ---
-            task_options = df_filtered[df_filtered["categorie"] != "Traitements"].to_dict('records') # On cache les phytos ici pour pas confondre
+            task_options = df_filtered[df_filtered["categorie"] != "Traitements"].to_dict('records') # On cache les phytos ici
             if task_options:
                 def format_func(task):
                     d = task['start'].strftime('%d/%m') if isinstance(task['start'], (datetime, pd.Timestamp)) else str(task['start'])
@@ -231,7 +231,7 @@ with tab_view:
 
 
 # =========================================================
-# ONGLET 2 : PLANIF GROUPÉE (CODE REMIS !)
+# ONGLET 2 : PLANIF GROUPÉE (BIEN PRÉSENT !)
 # =========================================================
 with tab_plan:
     st.subheader("🛠️ Ajouter une intervention (Sauf Phyto)")
@@ -272,43 +272,39 @@ with tab_plan:
                     st.rerun()
 
 # =========================================================
-# ONGLET 3 : TRAITEMENTS PHYTO (Gantt dédié + Calculateur)
+# ONGLET 3 : TRAITEMENTS PHYTO
 # =========================================================
 with tab_phyto:
     st.subheader("🧪 Traitements & Protection du Vignoble")
     
-    # 1. VISUALISATION DÉDIÉE (Gantt Phyto Uniquement)
-  st.markdown("##### 📅 Calendrier des Traitements")
+    # 1. VISUALISATION (GANTT AMÉLIORÉ)
+    df_all_phyto = pd.DataFrame(st.session_state.db_itk)
+    if not df_all_phyto.empty and "categorie" in df_all_phyto.columns:
+        df_phyto_only = df_all_phyto[df_all_phyto["categorie"] == "Traitements"].copy()
+        if not df_phyto_only.empty:
+            df_phyto_only["start"] = pd.to_datetime(df_phyto_only["start"])
+            df_phyto_only["end"] = pd.to_datetime(df_phyto_only["end"])
+            df_phyto_only["Parcelle"] = df_phyto_only["parcelle_id"].apply(lambda x: DATA_PARCELLES.get(x, {}).get("nom", x))
             
-            # Amélioration du graphique
+            st.markdown("##### 📅 Calendrier des Traitements")
             fig_p = px.timeline(
-                df_phyto_only, 
-                x_start="start", x_end="end", 
-                y="Parcelle", 
-                color="tache", # Couleur différente par traitement
-                text="tache",    # Affiche le nom T1, T2 directement sur la barre
-                title="", 
-                height=350 + (len(df_phyto_only["Parcelle"].unique()) * 20) # Hauteur adaptative selon le nb de parcelles
+                df_phyto_only, x_start="start", x_end="end", y="Parcelle", 
+                color="tache", text="tache", title="",
+                height=350 + (len(df_phyto_only["Parcelle"].unique()) * 20)
             )
-            
-            # Réglages de l'axe et de l'échelle (Autoscale amélioré)
+            # Autoscale et format date
             fig_p.update_layout(
-                xaxis=dict(
-                    title="Date",
-                    tickformat="%d/%m", # Format jour/mois plus lisible
-                    range=[date(date.today().year, 1, 1), date(date.today().year, 12, 31)] # Fixe la vue sur l'année en cours par défaut
-                ),
-                yaxis=dict(title=""),
-                showlegend=True
+                xaxis=dict(title="Date", tickformat="%d/%m", range=[date(date.today().year, 1, 1), date(date.today().year, 12, 31)]),
+                yaxis=dict(title=""), showlegend=True
             )
-            
-            # Force l'ordre des parcelles et inverse l'axe Y pour avoir le haut en haut
             fig_p.update_yaxes(autorange="reversed")
-            
             st.plotly_chart(fig_p, use_container_width=True)
+        else:
+            st.info("Aucun traitement enregistré.")
+    
+    st.divider()
 
-
-    # 2. CALCULATEUR & SAISIE
+    # 2. CALCULATEUR
     col_left, col_right = st.columns([1.2, 1])
     
     with col_left:
@@ -318,25 +314,24 @@ with tab_phyto:
             sel_parc = st.multiselect("Parcelles", options=DATA_PARCELLES.keys(), format_func=lambda x: DATA_PARCELLES[x]['nom'])
             surf_tot = sum([DATA_PARCELLES[p]['surface'] for p in sel_parc])
             
-            # B. Calibrage (Vitesse/Largeur)
-            st.markdown("**Calibrage & Volume**")
-            c_cal1, c_cal2, c_cal3 = st.columns(3)
-            with c_cal1:
+            # B. Calibrage
+            st.markdown("**Calibrage**")
+            c1, c2, c3 = st.columns(3)
+            with c1:
                 vitesse = st.number_input("Vitesse (km/h)", 4.0, 10.0, 5.0)
-            with c_cal2:
-                largeur = st.number_input("Largeur (m)", 1.0, 3.0, 2.5) # Largeur rang ou rampe
-            with c_cal3:
+            with c2:
+                largeur = st.number_input("Largeur (m)", 1.0, 3.0, 2.5)
+            with c3:
                 vol_ha_cible = st.number_input("Objectif L/ha", 50, 500, 150)
             
-            # Formule : Debit (L/min) = (L/ha * km/h * m) / 600
             debit_requis = (vol_ha_cible * vitesse * largeur) / 600
-            st.info(f"💡 Pour faire **{vol_ha_cible} L/ha** à {vitesse} km/h (sur {largeur}m), il faut un débit de **{debit_requis:.2f} L/min**.")
+            st.info(f"💡 Débit requis : **{debit_requis:.2f} L/min** (pour {vol_ha_cible} L/ha)")
             
             vol_cuve_total = surf_tot * vol_ha_cible
             st.markdown(f"👉 Volume Total Bouillie : **{vol_cuve_total:.0f} Litres**")
             
             # C. Produits
-            st.markdown("**Produits & Doses**")
+            st.markdown("**Produits**")
             prods = st.multiselect("Produits", options=DATA_PRODUITS.keys())
             
             details = []
@@ -352,7 +347,7 @@ with tab_phyto:
                         d_u = st.number_input(f"Dose {p}", value=inf['dose_ref'], key=f"dphy_{p}")
                     
                     qte_p = d_u * surf_tot
-                    st.caption(f"-> Mettre **{qte_p:.2f} {inf['unite']}** dans la cuve")
+                    st.caption(f"-> Mettre **{qte_p:.2f} {inf['unite']}**")
                     
                     if inf['ift'] and inf['dose_ref'] > 0:
                         ift_tot += (d_u / inf['dose_ref'])
@@ -380,23 +375,17 @@ with tab_phyto:
 
     with col_right:
         st.markdown("#### ✏️ Modifier / Supprimer Phyto")
-        
-        # Filtre uniquement les traitements existants
         all_phyto_list = [t for t in st.session_state.db_itk if t.get("categorie") == "Traitements"]
         
         if all_phyto_list:
-            # On trie par date récente
             all_phyto_list.sort(key=lambda x: x['start'], reverse=True)
-            
             def fmt_p(x):
-                # Récup nom parcelle pour l'affichage
                 pname = DATA_PARCELLES.get(x['parcelle_id'], {}).get('nom', '?')
                 return f"{x['start']} | {pname} | {x['tache']}"
 
             sel_edit_phy = st.selectbox("Choisir un traitement passé", all_phyto_list, format_func=fmt_p)
             
             if sel_edit_phy:
-                 # Retrouver l'index
                 idx_phy = next((i for i, item in enumerate(st.session_state.db_itk) if item["id"] == sel_edit_phy["id"]), -1)
                 
                 with st.form("edit_phyto_form"):
@@ -411,9 +400,7 @@ with tab_phyto:
                             del st.session_state.db_itk[idx_phy]
                             st.success("Supprimé !")
                         else:
-                            st.session_state.db_itk[idx_phy].update({
-                                "tache": new_n, "start": new_d, "end": new_d, "ift_value": new_ift
-                            })
+                            st.session_state.db_itk[idx_phy].update({"tache": new_n, "start": new_d, "end": new_d, "ift_value": new_ift})
                             st.success("Modifié !")
                         save_data()
                         st.rerun()
@@ -429,28 +416,22 @@ with tab_stats:
     df_all = pd.DataFrame(st.session_state.db_itk)
     
     if not df_all.empty:
-        # Nettoyage
         if "jours_estimes" not in df_all.columns: df_all["jours_estimes"] = 0.0
         if "ift_value" not in df_all.columns: df_all["ift_value"] = 0.0
         df_all["jours_estimes"] = df_all["jours_estimes"].fillna(0.0)
         df_all["cepage"] = df_all["parcelle_id"].apply(lambda x: DATA_PARCELLES.get(x, {}).get("cepage", "?"))
 
-        # 1. KPIs
         k1, k2, k3, k4 = st.columns(4)
         k1.metric("Total Heures Planifiées", f"{df_all['jours_estimes'].sum()*6:.0f} h")
         k2.metric("Nb Interventions", len(df_all))
-        
-        # Calcul IFT Moyen pondéré (approximatif pour l'exemple)
         avg_ift = df_all.groupby("parcelle_id")["ift_value"].sum().mean()
         k3.metric("IFT Moyen / Parcelle", f"{avg_ift:.2f}")
-        
         nb_fini = len(df_all[df_all["statut"] == "Fini"])
         pct = (nb_fini / len(df_all) * 100) if len(df_all) > 0 else 0
         k4.metric("Avancement Global", f"{pct:.0f} %")
         
         st.divider()
         
-        # 2. GRAPHIQUES
         g1, g2 = st.columns(2)
         with g1:
             st.markdown("##### Travail par Cépage")
