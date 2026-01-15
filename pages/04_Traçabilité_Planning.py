@@ -19,15 +19,13 @@ COLOR_MAP = {
     "Grenache": "darkred", "Marselan": "purple", "Merlot": "darkblue", "Caladoc": "pink"
 }
 
-# TES VRAIES PARCELLES (Version Complète)
+# TES PARCELLES (Complètes)
 DATA_PARCELLES = {
-    # --- SYRAH ISABELLE ---
     "VIGA03": {
         "nom": "Syrah Isabelle", "cepage": "Syrah", "surface": 0.56, "annee": 2019,
         "lat": 43.4296, "lon": 3.0925,
         "geometry": {"type": "Polygon", "coordinates": [[[3.092493, 43.429614], [3.092055, 43.428946], [3.093490, 43.428517], [3.093604, 43.428660], [3.093541, 43.428766], [3.093464, 43.428844], [3.093363, 43.428914], [3.093242, 43.428914], [3.093128, 43.428932], [3.092595, 43.429582], [3.092493, 43.429614]]]}
     },
-    # --- DECOUPAGE DE LA PLAINE ---
     "VIGA_PL1": {
         "nom": "La Plaine 1 (Nord-Est)", "cepage": "Viognier", "surface": 0.50, "annee": 2015, "lat": 43.4289, "lon": 3.0930,
         "geometry": {"type": "Polygon", "coordinates": [[[3.092493, 43.429614], [3.092055, 43.428946], [3.093490, 43.428517], [3.093604, 43.428660], [3.093541, 43.428766], [3.093464, 43.428844], [3.093363, 43.428914], [3.093242, 43.428914], [3.093128, 43.428932], [3.092595, 43.429582], [3.092493, 43.429614]]]}
@@ -48,7 +46,6 @@ DATA_PARCELLES = {
         "nom": "La Plaine 5 (Sud-Ouest)", "cepage": "Viognier", "surface": 0.50, "annee": 2015, "lat": 43.4280, "lon": 3.0890,
         "geometry": {"type": "Polygon", "coordinates": [[[3.089321, 43.429010], [3.088299, 43.428567], [3.088895, 43.427018], [3.090190, 43.426916], [3.089321, 43.429010]]]}
     },
-    # --- AUTRES ---
     "VIGA01": {"nom": "Vio Jeune JL", "cepage": "Viognier", "surface": 2.70, "annee": 2001, "lat": 43.4225, "lon": 3.0830},
     "VIGA04": {"nom": "Vio Plantier JL", "cepage": "Viognier", "surface": 2.54, "annee": 2014, "lat": 43.4205, "lon": 3.0850},
     "VIGA_TR": {"nom": "Travers", "cepage": "Viognier", "surface": 1.90, "annee": 2010, "lat": 43.4195, "lon": 3.0880},
@@ -68,21 +65,55 @@ for code, data in DATA_PARCELLES.items():
     data["color"] = COLOR_MAP.get(data["cepage"], "gray")
 
 
-# --- NOUVEAU : BASE DE PRODUITS (Pour ton module Phyto) ---
+# --- MISE A JOUR : BASE PRODUITS AVEC TES DOSES ---
 DATA_PRODUITS = {
-    "Soufre Mouillable": {"unite": "kg/ha", "dose_ref": 12.5, "cible": "Oïdium", "type": "Biocontrôle", "ift": False},
-    "Cuivre (Bouillie B.)": {"unite": "kg/ha", "dose_ref": 4.0, "cible": "Mildiou", "type": "Biocontrôle", "ift": False},
-    "Fosétyl-Al (Sys)": {"unite": "kg/ha", "dose_ref": 2.5, "cible": "Mildiou", "type": "Chimie", "ift": True},
-    "Métrafénone": {"unite": "L/ha", "dose_ref": 0.25, "cible": "Oïdium", "type": "Chimie", "ift": True},
-    "Insecticide X": {"unite": "L/ha", "dose_ref": 0.5, "cible": "Cicadelle", "type": "Insecticide", "ift": True},
-    "Engrais Foliaire": {"unite": "L/ha", "dose_ref": 3.0, "cible": "Nutrition", "type": "Engrais", "ift": False}
+    "Cuivre Nordox": {
+        "unite": "kg/ha", 
+        "dose_ref": 1.25, # TA dose de référence
+        "cible": "Mildiou", 
+        "type": "Biocontrôle", 
+        "ift": False
+    },
+    "Soufre Mouillable": {
+        "unite": "kg/ha", 
+        "dose_ref": 12.5, 
+        "cible": "Oïdium", 
+        "type": "Biocontrôle", 
+        "ift": False
+    },
+    "Soufre Poudre": {
+        "unite": "kg/ha", 
+        "dose_ref": 20.0, 
+        "cible": "Oïdium", 
+        "type": "Biocontrôle", 
+        "ift": False
+    },
+    "Fosétyl-Al (Sys)": {
+        "unite": "kg/ha", 
+        "dose_ref": 2.5, 
+        "cible": "Mildiou", 
+        "type": "Chimie", 
+        "ift": True
+    },
+    "Métrafénone": {
+        "unite": "L/ha", 
+        "dose_ref": 0.25, 
+        "cible": "Oïdium", 
+        "type": "Chimie", 
+        "ift": True
+    },
+    "Engrais Foliaire": {
+        "unite": "L/ha", 
+        "dose_ref": 3.0, 
+        "cible": "Nutrition", 
+        "type": "Engrais", 
+        "ift": False
+    }
 }
 
 
 # --- 2. FONCTIONS DE CHARGEMENT ET SAUVEGARDE ---
-
 def load_data():
-    """Charge les données ou génère le planning basé sur ton EXCEL."""
     if os.path.exists(CSV_FILE):
         try:
             df = pd.read_csv(CSV_FILE)
@@ -91,84 +122,52 @@ def load_data():
             return df.to_dict('records')
         except: return []
     else:
-        # --- GÉNÉRATION DU PLANNING TYPE (Ton Excel COMPLET) ---
+        # Données par défaut (Ton Excel complet)
         initial_data = []
-        y_start = 2025
-        y_next = 2026
-        
+        y_start, y_next = 2025, 2026
+        tasks_template = [
+            {"tache": "Nettoyage Goutte-à-goutte", "cat": "Irrigation", "start": date(y_start, 11, 10), "end": date(y_start, 12, 15), "color": "#3498db", "statut": "Fini"},
+            {"tache": "Enherbement", "cat": "Mécanique", "start": date(y_start, 11, 15), "end": date(y_start, 11, 30), "color": "#2ecc71", "statut": "Fini"},
+            {"tache": "Prétaille", "cat": "Mécanique", "start": date(y_start, 11, 20), "end": date(y_start, 12, 15), "color": "#f1c40f", "statut": "Fini"},
+            {"tache": "Taille & Tirage", "cat": "Manuelle", "start": date(y_start, 11, 25), "end": date(y_next, 2, 28), "color": "#e74c3c", "statut": "En cours"},
+            {"tache": "Epandage Compost", "cat": "Fertilisation", "start": date(y_start, 12, 1), "end": date(y_next, 1, 15), "color": "#8d6e63", "statut": "Fini"},
+            {"tache": "Sécaille/Attachage", "cat": "Manuelle", "start": date(y_start, 12, 10), "end": date(y_next, 3, 15), "color": "#9b59b6", "statut": "En cours"},
+            {"tache": "Suspente Goutte-à-goutte", "cat": "Irrigation", "start": date(y_next, 1, 5), "end": date(y_next, 3, 30), "color": "#3498db", "statut": "A faire"},
+            {"tache": "Epandage Engrais", "cat": "Fertilisation", "start": date(y_next, 1, 25), "end": date(y_next, 2, 15), "color": "#d35400", "statut": "A faire"},
+            {"tache": "Broyage du bois", "cat": "Mécanique", "start": date(y_next, 2, 1), "end": date(y_next, 3, 1), "color": "#e67e22", "statut": "A faire"},
+            {"tache": "Désherbage", "cat": "Traitements", "start": date(y_next, 2, 15), "end": date(y_next, 3, 20), "color": "#27ae60", "statut": "Planifié"},
+        ]
         for code in DATA_PARCELLES.keys():
-            # Liste des tâches copiées de ton planning image
-            tasks_template = [
-                {"tache": "Nettoyage Goutte-à-goutte", "cat": "Irrigation", "start": date(y_start, 11, 10), "end": date(y_start, 12, 15), "color": "#3498db", "statut": "Fini"},
-                {"tache": "Enherbement", "cat": "Mécanique", "start": date(y_start, 11, 15), "end": date(y_start, 11, 30), "color": "#2ecc71", "statut": "Fini"},
-                {"tache": "Prétaille", "cat": "Mécanique", "start": date(y_start, 11, 20), "end": date(y_start, 12, 15), "color": "#f1c40f", "statut": "Fini"},
-                {"tache": "Taille & Tirage du bois", "cat": "Manuelle", "start": date(y_start, 11, 25), "end": date(y_next, 2, 28), "color": "#e74c3c", "statut": "En cours"},
-                {"tache": "Epandage Compost", "cat": "Fertilisation", "start": date(y_start, 12, 1), "end": date(y_next, 1, 15), "color": "#8d6e63", "statut": "Fini"},
-                {"tache": "Entretien Palissage", "cat": "Manuelle", "start": date(y_start, 12, 10), "end": date(y_next, 3, 15), "color": "#9b59b6", "statut": "En cours"},
-                {"tache": "Suspente Goutte-à-goutte", "cat": "Irrigation", "start": date(y_next, 1, 5), "end": date(y_next, 3, 30), "color": "#3498db", "statut": "A faire"},
-                {"tache": "Epandage Engrais", "cat": "Fertilisation", "start": date(y_next, 1, 25), "end": date(y_next, 2, 15), "color": "#d35400", "statut": "A faire"},
-                {"tache": "Broyage du bois", "cat": "Mécanique", "start": date(y_next, 2, 1), "end": date(y_next, 3, 1), "color": "#e67e22", "statut": "A faire"},
-                {"tache": "Désherbage", "cat": "Traitements", "start": date(y_next, 2, 15), "end": date(y_next, 3, 20), "color": "#27ae60", "statut": "Planifié"},
-            ]
-            
             for i, t in enumerate(tasks_template):
                 initial_data.append({
-                    "id": f"{code}_init_{i}", 
-                    "parcelle_id": code, 
-                    "tache": t["tache"], 
-                    "categorie": t["cat"], 
-                    "start": t["start"], 
-                    "end": t["end"],
-                    "statut": t["statut"], 
-                    "cadence": 1.0, 
-                    "jours_estimes": 0.0,
-                    "materiel": "Standard", 
-                    "color_hex": t["color"],
-                    "ift_value": 0.0 # J'ajoute juste ça pour que le phyto marche
+                    "id": f"{code}_init_{i}", "parcelle_id": code, "tache": t["tache"], "categorie": t["cat"], 
+                    "start": t["start"], "end": t["end"], "statut": t["statut"], "cadence": 1.0, "jours_estimes": 0.0,
+                    "materiel": "Standard", "color_hex": t["color"], "ift_value": 0.0
                 })
         return initial_data
 
 def save_data():
-    """Sauvegarde les données dans le fichier CSV."""
     if "db_itk" in st.session_state:
         pd.DataFrame(st.session_state.db_itk).to_csv(CSV_FILE, index=False)
 
-
-# --- 3. INITIALISATION ---
 if "db_itk" not in st.session_state:
     st.session_state.db_itk = load_data()
 
 
-# --- 4. CARTE (Ton code avec GeoJSON qui marche) ---
+# --- 3. CARTE ---
 st.subheader("🗺️ Carte du Vignoble")
-
 col_map, col_legend = st.columns([5, 1])
-
 with col_map:
     avg_lat = sum([d['lat'] for d in DATA_PARCELLES.values()]) / len(DATA_PARCELLES)
     avg_lon = sum([d['lon'] for d in DATA_PARCELLES.values()]) / len(DATA_PARCELLES)
-    
     m = folium.Map(location=[avg_lat, avg_lon], zoom_start=15)
     folium.TileLayer(tiles='https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}', attr='Esri', name='Esri Satellite', overlay=False, control=True).add_to(m)
-
     for code, info in DATA_PARCELLES.items():
         if "geometry" in info:
-            folium.GeoJson(
-                info["geometry"],
-                style_function=lambda x, color=info.get("color", "gray"): {'fillColor': color, 'color': color, 'weight': 2, 'fillOpacity': 0.4},
-                tooltip=f"{info['nom']} ({info['surface']} ha)"
-            ).add_to(m)
-        folium.Marker([info["lat"], info["lon"]], popup=f"<b>{info['nom']}</b>", icon=folium.Icon(color=info.get("color", "gray"), icon="leaf", prefix="fa")).add_to(m)
+            folium.GeoJson(info["geometry"], style_function=lambda x, color=DATA_PARCELLES[code].get("color", "gray"): {'fillColor': color, 'color': color, 'weight': 2, 'fillOpacity': 0.4}).add_to(m)
+        folium.Marker([info["lat"], info["lon"]], popup=info["nom"], icon=folium.Icon(color=DATA_PARCELLES[code].get("color", "gray"), icon="leaf", prefix="fa")).add_to(m)
+    map_output = st_folium(m, height=450, use_container_width=True)
 
-    map_output = st_folium(m, height=500, use_container_width=True)
-
-with col_legend:
-    st.markdown("**Légende**")
-    for cepage, color in COLOR_MAP.items():
-        st.markdown(f"<span style='color:{color};'>■</span> {cepage}", unsafe_allow_html=True)
-
-
-# --- 5. ONGLETS DE GESTION ---
 selected_code_map = None
 if map_output["last_object_clicked"]:
     lat_clic = map_output["last_object_clicked"]["lat"]
@@ -177,19 +176,17 @@ if map_output["last_object_clicked"]:
             selected_code_map = code
             break
 
+# --- 4. ONGLETS DE GESTION ---
 st.divider()
-# J'ajoute juste l'onglet "Traitements" au milieu
 tab_view, tab_plan, tab_phyto, tab_stats, tab_data = st.tabs(["🔍 Détail & Modif", "🚜 Planif Groupée", "🧪 Traitements Phyto", "📊 Stats", "🗃️ Data"])
 
-# ONGLET 1 : DÉTAIL & MODIFICATION (TA VERSION PRÉFÉRÉE)
+# ONGLET 1 : DÉTAIL & MODIFICATION
 with tab_view:
     if selected_code_map:
         parcelle = DATA_PARCELLES[selected_code_map]
         st.markdown(f"### 🍇 {parcelle['nom']} <span style='font-size:0.7em; color:gray'>({parcelle['cepage']} - {parcelle['surface']} ha)</span>", unsafe_allow_html=True)
         
         df_global = pd.DataFrame(st.session_state.db_itk)
-        
-        # Sécurisation
         for col in ["color_hex", "categorie", "materiel", "cadence", "jours_estimes", "statut", "ift_value"]:
             if col not in df_global.columns: df_global[col] = None
         df_global = df_global.fillna(value={"color_hex":"#3498db", "ift_value":0.0})
@@ -210,8 +207,6 @@ with tab_view:
             st.plotly_chart(fig, use_container_width=True)
             
             st.divider()
-            
-            # --- TON SYSTEME DE MODIFICATION QUE TU AIMAIS BIEN ---
             st.subheader("✏️ Modifier une intervention")
             task_options = df_filtered.to_dict('records')
             
@@ -239,7 +234,7 @@ with tab_view:
                         new_start = st.date_input("Début", d_s)
                         new_end = st.date_input("Fin", d_e)
                     with c3:
-                        new_mat = st.text_input("Matériel", value=str(selected_task["materiel"]))
+                        new_mat = st.text_input("Matériel / Mélange", value=str(selected_task["materiel"]))
                         del_chk = st.checkbox("Supprimer ?")
 
                     if st.form_submit_button("Enregistrer"):
@@ -259,7 +254,7 @@ with tab_view:
     else:
         st.info("👆 Cliquez sur une parcelle.")
 
-# ONGLET 2 : PLANIF GROUPÉE (CODE INCHANGÉ)
+# ONGLET 2 : PLANIF GROUPÉE
 with tab_plan:
     st.subheader("🛠️ Ajouter une intervention (Sauf Phyto)")
     c_g, c_d = st.columns([1, 2])
@@ -298,7 +293,7 @@ with tab_plan:
                     st.success("Ajouté !")
                     st.rerun()
 
-# --- NOUVEL ONGLET PHYTO (AJOUTÉ ICI) ---
+# --- NOUVEL ONGLET PHYTO (AJUSTÉ SELON TA DEMANDE) ---
 with tab_phyto:
     st.subheader("🧪 Calculateur Phyto & IFT")
     
@@ -307,62 +302,87 @@ with tab_phyto:
     with col_calc:
         st.markdown("**1. Préparation**")
         with st.form("phyto_form"):
-            sel_parc = st.multiselect("Parcelles", options=DATA_PARCELLES.keys(), format_func=lambda x: DATA_PARCELLES[x]['nom'])
+            # Selection parcelles
+            sel_parc = st.multiselect("Parcelles à traiter", options=DATA_PARCELLES.keys(), format_func=lambda x: DATA_PARCELLES[x]['nom'])
             surf_tot = sum([DATA_PARCELLES[p]['surface'] for p in sel_parc])
-            st.info(f"Surface: {surf_tot:.2f} ha")
+            st.info(f"Surface Totale : **{surf_tot:.2f} ha**")
             
             c1, c2 = st.columns(2)
             with c1:
-                d_trait = st.date_input("Date", date.today())
-                n_trait = st.text_input("Nom", "T1 Mildiou")
+                d_trait = st.date_input("Date du traitement", date.today())
+                n_trait = st.text_input("Nom", "T2 Mildiou/Oïdium")
             with c2:
-                vol_cuve = st.number_input("Cuve (L)", 1000)
-                vol_ha = st.number_input("Bouillie L/ha", 150)
+                st.caption("Volume de Bouillie")
+                vol_ha = st.number_input("L/ha (Bouillie)", value=150)
+                vol_cuve = st.number_input("Volume Cuve (L)", value=1000)
             
             vol_tot = surf_tot * vol_ha
-            st.caption(f"Besoin total: {vol_tot:.0f} L")
+            nb_cuves = vol_tot / vol_cuve
+            st.markdown(f"👉 Besoin total : **{vol_tot:.0f} L** ({nb_cuves:.1f} cuves)")
             
-            st.markdown("**2. Produits**")
-            prods = st.multiselect("Choisir Produits", options=DATA_PRODUITS.keys())
+            st.write("---")
+            st.markdown("**2. Composition (Produit par produit)**")
+            
+            # Sélection Multi-produits
+            prods = st.multiselect("Choisir les produits", options=DATA_PRODUITS.keys())
             
             details = []
             ift_tot = 0.0
             
             if prods:
+                st.markdown("##### 🧪 Dosage dans la cuve")
                 for p in prods:
                     inf = DATA_PRODUITS[p]
-                    col_a, col_b = st.columns([2, 1])
+                    
+                    # On affiche la dose de référence pré-remplie
+                    col_a, col_b, col_c = st.columns([2, 1, 1])
                     with col_a:
-                        st.write(f"{p} ({inf['dose_ref']} {inf['unite']})")
+                        st.write(f"**{p}**")
+                        st.caption(f"Ref: {inf['dose_ref']} {inf['unite']}")
+                    
                     with col_b:
-                        d_user = st.number_input(f"Dose {p}", value=inf['dose_ref'], key=f"d_{p}")
+                        # Ici l'utilisateur peut changer la dose s'il module
+                        d_user = st.number_input(f"Dose ({inf['unite']})", value=inf['dose_ref'], key=f"d_{p}")
                     
-                    qte = d_user * surf_tot
-                    st.write(f"-> Mettre **{qte:.1f} {inf['unite']}** dans la cuve")
+                    with col_c:
+                        # Calcul quantité TOTALE pour la surface choisie
+                        qte_totale = d_user * surf_tot
+                        st.metric("Total à mettre", f"{qte_totale:.2f}")
+
+                    # Calcul IFT produit
+                    ift_p = 0.0
+                    if inf['ift'] and inf['dose_ref'] > 0:
+                        ift_p = d_user / inf['dose_ref']
                     
-                    ift_p = (d_user / inf['dose_ref']) if (inf['ift'] and inf['dose_ref']>0) else 0
                     ift_tot += ift_p
-                    details.append(f"{p}: {d_user}")
+                    details.append(f"{p}: {d_user} {inf['unite']}")
 
-                st.warning(f"IFT Traitement : {ift_tot:.2f}")
+                st.warning(f"📈 IFT Total de ce passage : {ift_tot:.2f}")
 
-            if st.form_submit_button("Enregistrer Traitement"):
+            if st.form_submit_button("✅ Enregistrer Traitement"):
                 if sel_parc:
                     ts = datetime.now().timestamp()
-                    str_det = ", ".join(details)
+                    str_det = " + ".join(details)
                     for pid in sel_parc:
                         st.session_state.db_itk.append({
-                            "id": f"{pid}_phyto_{ts}", "parcelle_id": pid, "tache": n_trait,
-                            "categorie": "Traitements", "start": d_trait, "end": d_trait,
-                            "statut": "Fini", "color_hex": "#8e44ad", "ift_value": ift_tot,
-                            "materiel": f"Vol:{vol_tot}L - {str_det}", "jours_estimes": 0.5
+                            "id": f"{pid}_phyto_{ts}", 
+                            "parcelle_id": pid, 
+                            "tache": n_trait,
+                            "categorie": "Traitements", 
+                            "start": d_trait, 
+                            "end": d_trait,
+                            "statut": "Fini", 
+                            "color_hex": "#8e44ad", 
+                            "ift_value": ift_tot,
+                            "materiel": f"{str_det} (Vol:{vol_ha}L/ha)", 
+                            "jours_estimes": 0.5
                         })
                     save_data()
                     st.success("Enregistré !")
                     st.rerun()
 
     with col_ift:
-        st.markdown("**Suivi IFT**")
+        st.markdown("**Suivi IFT par Parcelle**")
         df_all = pd.DataFrame(st.session_state.db_itk)
         if not df_all.empty and "ift_value" in df_all.columns:
             df_all["ift_value"] = df_all["ift_value"].fillna(0.0)
@@ -371,7 +391,7 @@ with tab_phyto:
             st.dataframe(res[["Nom", "ift_value"]], hide_index=True)
             st.plotly_chart(px.bar(res, x="Nom", y="ift_value", color="ift_value"), use_container_width=True)
 
-# ONGLET 4 : STATS (CODE INCHANGÉ)
+# ONGLET 4 : STATS
 with tab_stats:
     df_all = pd.DataFrame(st.session_state.db_itk)
     if not df_all.empty:
