@@ -218,14 +218,18 @@ if map_output["last_object_clicked"]:
 st.divider()
 tab_view, tab_plan, tab_stats, tab_data = st.tabs(["🔍 Détail Parcelle", "🚜 Planification Groupée", "📊 Bilan & Stats", "🗃️ Données Brutes"])
 
-# ONGLET 1 : DÉTAIL
+# ONGLET 1 : DÉTAIL & MODIFICATION
 with tab_view:
     if selected_code_map:
         parcelle = DATA_PARCELLES[selected_code_map]
         st.markdown(f"### 🍇 {parcelle['nom']} <span style='font-size:0.7em; color:gray'>({parcelle['cepage']} - {parcelle['surface']} ha)</span>", unsafe_allow_html=True)
         
+        # 1. PRÉPARATION DES DONNÉES
         df_global = pd.DataFrame(st.session_state.db_itk)
-        for col in ["color_hex", "categorie", "materiel", "cadence", "jours_estimes", "statut"]:
+        
+        # Sécurisation des colonnes (évite les bugs si une colonne manque)
+        cols_safe = ["color_hex", "categorie", "materiel", "cadence", "jours_estimes", "statut"]
+        for col in cols_safe:
             if col not in df_global.columns: df_global[col] = None
             if col == "color_hex": df_global[col] = df_global[col].fillna("#3498db")
             elif col in ["cadence", "jours_estimes"]: df_global[col] = df_global[col].fillna(0.0)
@@ -233,26 +237,97 @@ with tab_view:
             
         df_global["start"] = pd.to_datetime(df_global["start"])
         df_global["end"] = pd.to_datetime(df_global["end"])
+        
+        # On ne garde que les tâches de CETTE parcelle
         df_filtered = df_global[df_global["parcelle_id"] == selected_code_map].copy()
 
         if not df_filtered.empty:
+            # 2. AFFICHAGE DU GRAPHIQUE (GANTT)
             color_map_gantt = {row["tache"]: row["color_hex"] for index, row in df_filtered.iterrows()}
             fig = px.timeline(
-                df_filtered, x_start="start", x_end="end", y="tache", color="tache",
+                df_filtered, 
+                x_start="start", x_end="end", y="tache", 
+                color="tache",
                 color_discrete_map=color_map_gantt,
-                hover_data=["statut", "categorie", "jours_estimes"], title="Planning"
+                # On affiche plein d'infos au survol de la souris
+                hover_data=["statut", "categorie", "jours_estimes", "materiel"], 
+                title="Planning des travaux"
             )
             fig.update_yaxes(autorange="reversed", title="")
             st.plotly_chart(fig, use_container_width=True)
             
-            with st.expander("🗑️ Supprimer une tâche"):
-                t_del = st.selectbox("Tâche à supprimer", df_filtered["tache"].unique())
-                if st.button("Confirmer suppression"):
-                    st.session_state.db_itk = [i for i in st.session_state.db_itk if not (i["parcelle_id"] == selected_code_map and i["tache"] == t_del)]
-                    save_data()
-                    st.rerun()
+            st.divider()
+            
+            # 3. ZONE DE MODIFICATION (C'est ici la nouveauté !)
+            st.subheader("✏️ Modifier / Voir le détail d'une tâche")
+            
+            # Liste déroulante pour choisir la tâche à modifier
+            # On crée une liste d'options : "Nom de la tâche (Date début)"
+            task_options = df_filtered.to_dict('records')
+            
+            # Fonction pour afficher un joli nom dans la liste
+            def format_func(task):
+                d = task['start'].strftime('%d/%m') if isinstance(task['start'], (datetime, pd.Timestamp)) else str(task['start'])
+                return f"{task['tache']} ({d}) - {task['statut']}"
+
+            selected_task = st.selectbox("Sélectionnez l'intervention à modifier :", task_options, format_func=format_func)
+            
+            if selected_task:
+                # On retrouve l'index unique de cette tâche dans la base globale
+                # (C'est nécessaire pour modifier la VRAIE donnée)
+                real_index = -1
+                for idx, item in enumerate(st.session_state.db_itk):
+                    if item["id"] == selected_task["id"]:
+                        real_index = idx
+                        break
+                
+                # Formulaire de modification pré-rempli
+                with st.form(key="edit_task_form"):
+                    c1, c2, c3 = st.columns(3)
+                    
+                    with c1:
+                        new_statut = st.selectbox("Statut", ["Planifié", "A faire", "En cours", "Fini"], index=["Planifié", "A faire", "En cours", "Fini"].index(selected_task["statut"]))
+                        new_color = st.color_picker("Couleur", selected_task["color_hex"])
+                    
+                    with c2:
+                        # Conversion dates safe
+                        d_start_val = selected_task["start"]
+                        if isinstance(d_start_val, pd.Timestamp): d_start_val = d_start_val.date()
+                        
+                        d_end_val = selected_task["end"]
+                        if isinstance(d_end_val, pd.Timestamp): d_end_val = d_end_val.date()
+
+                        new_start = st.date_input("Date Début", d_start_val)
+                        new_end = st.date_input("Date Fin", d_end_val)
+                        
+                    with c3:
+                        new_mat = st.text_input("Matériel / Notes", value=str(selected_task["materiel"]))
+                        # Option de suppression dans le formulaire
+                        delete_check = st.checkbox("🗑️ Supprimer cette tâche ?")
+
+                    submit_btn = st.form_submit_button("💾 Enregistrer les modifications")
+                    
+                    if submit_btn:
+                        if delete_check:
+                            # Suppression
+                            del st.session_state.db_itk[real_index]
+                            st.success("Tâche supprimée !")
+                        else:
+                            # Mise à jour
+                            st.session_state.db_itk[real_index].update({
+                                "statut": new_statut,
+                                "color_hex": new_color,
+                                "start": new_start,
+                                "end": new_end,
+                                "materiel": new_mat
+                            })
+                            st.success("Modifications enregistrées !")
+                        
+                        save_data() # Sauvegarde CSV
+                        st.rerun()  # Recharge la page pour voir les changements
+                        
         else:
-            st.info("Aucune intervention.")
+            st.info("Aucune intervention planifiée sur cette parcelle.")
     else:
         st.info("👆 Cliquez sur le MARQUEUR (point) d'une parcelle pour la sélectionner.")
 
