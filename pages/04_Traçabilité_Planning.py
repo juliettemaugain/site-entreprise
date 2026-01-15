@@ -12,9 +12,8 @@ st.title("🍇 Pilotage du Vignoble - La Gauphine")
 
 CSV_FILE = "data_itk.csv"
 
-# --- 1. DONNÉES RÉFÉRENTIELS ---
+# --- 1. DONNÉES RÉFÉRENTIELS (CACHE DATA UNIQUEMENT SUR LES DICT) ---
 
-# On utilise cache_data seulement pour les dictionnaires simples, pas la carte
 @st.cache_data
 def get_static_data():
     COLOR_MAP = {
@@ -160,7 +159,7 @@ if map_output["last_object_clicked"]:
 
 # --- 4. ONGLETS PRINCIPAUX ---
 st.divider()
-tab_view, tab_phyto, tab_stats, tab_data = st.tabs(["🔍 Détail Parcelle", "🧪 Traitements Phyto", "📊 Statistiques", "🗃️ Data"])
+tab_view, tab_plan, tab_phyto, tab_stats, tab_data = st.tabs(["🔍 Détail Parcelle", "🚜 Planif Groupée", "🧪 Traitements Phyto", "📊 Statistiques", "🗃️ Data"])
 
 # =========================================================
 # ONGLET 1 : DÉTAIL PARCELLE (Modif Standard)
@@ -230,7 +229,10 @@ with tab_view:
     else:
         st.info("👆 Cliquez sur une parcelle.")
 
-# ONGLET 2 : PLANIF GROUPÉE
+
+# =========================================================
+# ONGLET 2 : PLANIF GROUPÉE (CODE REMIS !)
+# =========================================================
 with tab_plan:
     st.subheader("🛠️ Ajouter une intervention (Sauf Phyto)")
     c_g, c_d = st.columns([1, 2])
@@ -268,8 +270,9 @@ with tab_plan:
                     save_data()
                     st.success("Ajouté !")
                     st.rerun()
+
 # =========================================================
-# ONGLET 2 : TRAITEMENTS PHYTO (Gantt dédié + Calculateur)
+# ONGLET 3 : TRAITEMENTS PHYTO (Gantt dédié + Calculateur)
 # =========================================================
 with tab_phyto:
     st.subheader("🧪 Traitements & Protection du Vignoble")
@@ -406,7 +409,7 @@ with tab_phyto:
 
 
 # =========================================================
-# ONGLET 3 : STATISTIQUES (RESTITUÉES !)
+# ONGLET 4 : STATISTIQUES (RESTITUÉES !)
 # =========================================================
 with tab_stats:
     st.subheader("📊 Tableau de Bord")
@@ -447,6 +450,6 @@ with tab_stats:
             grp_ift["Nom"] = grp_ift["parcelle_id"].apply(lambda x: DATA_PARCELLES.get(x,{}).get("nom",x))
             st.plotly_chart(px.bar(grp_ift, x="Nom", y="ift_value", color="ift_value", color_continuous_scale="Reds"), use_container_width=True)
 
-# ONGLET 4 : DATA
+# ONGLET 5 : DATA
 with tab_data:
     st.dataframe(pd.DataFrame(st.session_state.db_itk))
