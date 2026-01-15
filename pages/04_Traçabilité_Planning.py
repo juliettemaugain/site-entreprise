@@ -215,6 +215,7 @@ for code, data in DATA_PARCELLES.items():
 
 # --- 2. FONCTIONS LOAD/SAVE ---
 def load_data():
+    # Si le fichier CSV existe, on le lit (priorité aux données sauvegardées)
     if os.path.exists(CSV_FILE):
         try:
             df = pd.read_csv(CSV_FILE)
@@ -223,9 +224,11 @@ def load_data():
             return df.to_dict('records')
         except: return []
     else:
-        # Données initiales Excel
+        # SINON : On génère le planning par défaut sur les NOUVELLES parcelles
         initial_data = []
         y_start, y_next = 2025, 2026
+        
+        # Le modèle de planning complet (selon ton Excel)
         tasks_template = [
             {"tache": "Nettoyage Goutte-à-goutte", "cat": "Irrigation", "start": date(y_start, 11, 10), "end": date(y_start, 12, 15), "color": "#3498db", "statut": "Fini"},
             {"tache": "Enherbement", "cat": "Mécanique", "start": date(y_start, 11, 15), "end": date(y_start, 11, 30), "color": "#2ecc71", "statut": "Fini"},
@@ -236,14 +239,25 @@ def load_data():
             {"tache": "Suspente Goutte-à-goutte", "cat": "Irrigation", "start": date(y_next, 1, 5), "end": date(y_next, 3, 30), "color": "#3498db", "statut": "A faire"},
             {"tache": "Epandage Engrais", "cat": "Fertilisation", "start": date(y_next, 1, 25), "end": date(y_next, 2, 15), "color": "#d35400", "statut": "A faire"},
             {"tache": "Broyage du bois", "cat": "Mécanique", "start": date(y_next, 2, 1), "end": date(y_next, 3, 1), "color": "#e67e22", "statut": "A faire"},
-            # Desherbage supprimé ici comme demandé
+            # Pas de désherbage ici, on le gère dans Phyto
         ]
+        
+        # On applique ce modèle à CHAQUE parcelle de la nouvelle liste
         for code in DATA_PARCELLES.keys():
             for i, t in enumerate(tasks_template):
                 initial_data.append({
-                    "id": f"{code}_init_{i}", "parcelle_id": code, "tache": t["tache"], "categorie": t["cat"], 
-                    "start": t["start"], "end": t["end"], "statut": t["statut"], "cadence": 1.0, "jours_estimes": 0.0,
-                    "materiel": "Standard", "color_hex": t["color"], "ift_value": 0.0
+                    "id": f"{code}_init_{i}", 
+                    "parcelle_id": code, # C'est ici que le lien se fait (ex: P_00)
+                    "tache": t["tache"], 
+                    "categorie": t["cat"], 
+                    "start": t["start"], 
+                    "end": t["end"], 
+                    "statut": t["statut"], 
+                    "cadence": 1.0, 
+                    "jours_estimes": 0.0,
+                    "materiel": "Standard", 
+                    "color_hex": t["color"], 
+                    "ift_value": 0.0
                 })
         return initial_data
 
