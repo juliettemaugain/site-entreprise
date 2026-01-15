@@ -16,42 +16,97 @@ COLOR_MAP = {
 }
 
 DATA_PARCELLES = {
+    # --- SYRAH ISABELLE (VIGA03) ---
     "VIGA03": {
-        "nom": "Vio Fournic bas JL", "cepage": "Viognier", "surface": 2.28, "annee": 1997, 
-        "lat": 43.4296, "lon": 3.0925, # J'ai ajusté le point central selon tes données
-        # On colle ici le bloc "geometry" tel quel, sans rien toucher !
+        "nom": "Syrah Isabelle", "cepage": "Syrah", "surface": 0.56, "annee": 2019, # J'ai mis 2019 (age 7 ans)
+        "lat": 43.4296, "lon": 3.0925,
         "geometry": {
-          "coordinates": [
-            [
-              [3.0924931192498377, 43.4296143369082],
-              [3.092055089459109, 43.428945850119646],
-              [3.0934897957306475, 43.428517092637975],
-              [3.093604064371874, 43.42866001213599],
-              [3.0935405817928086, 43.42876604896469],
-              [3.093464402699169, 43.428844423892656],
-              [3.0933628305733123, 43.428913578156795],
-              [3.093242213674756, 43.428913578156795],
-              [3.0931279450334728, 43.42893201928061],
-              [3.092594691374927, 43.42958206530179],
-              [3.0924931192498377, 43.4296143369082]
-            ]
-          ],
-          "type": "Polygon"
+            "type": "Polygon",
+            "coordinates": [[
+                [3.0924931192498377, 43.4296143369082],
+                [3.092055089459109, 43.428945850119646],
+                [3.0934897957306475, 43.428517092637975],
+                [3.093604064371874, 43.42866001213599],
+                [3.0935405817928086, 43.42876604896469],
+                [3.093464402699169, 43.428844423892656],
+                [3.0933628305733123, 43.428913578156795],
+                [3.093242213674756, 43.428913578156795],
+                [3.0931279450334728, 43.42893201928061],
+                [3.092594691374927, 43.42958206530179],
+                [3.0924931192498377, 43.4296143369082]
+            ]]
         }
     },
-    "VIGA01": {"nom": "Vio Jeune JL", "cepage": "Viognier", "surface": 2.70, "annee": 2001, "lat": 43.4225, "lon": 3.0830},
-    "VIGA04": {"nom": "Vio Plantier JL", "cepage": "Viognier", "surface": 2.54, "annee": 2014, "lat": 43.4205, "lon": 3.0850},
-    "VIGA_PL": {"nom": "La Plaine", "cepage": "Viognier", "surface": 2.50, "annee": 2015, "lat": 43.4230, "lon": 3.0860},
-    "VIGA_TR": {"nom": "Travers", "cepage": "Viognier", "surface": 1.90, "annee": 2010, "lat": 43.4195, "lon": 3.0880},
-    "CHGA04": {"nom": "Chardo 11 & 12", "cepage": "Chardonnay", "surface": 7.06, "annee": 2011, "lat": 43.4190, "lon": 3.0800},
-    "CH_OLI": {"nom": "Olivette (Global)", "cepage": "Chardonnay", "surface": 3.33, "annee": 2018, "lat": 43.4180, "lon": 3.0790},
-    "SYCA01": {"nom": "Syrah Plantier", "cepage": "Syrah", "surface": 1.50, "annee": 1999, "lat": 43.4240, "lon": 3.0820},
-    "SYCA02": {"nom": "Syrah Puech", "cepage": "Syrah", "surface": 2.10, "annee": 2005, "lat": 43.4250, "lon": 3.0840},
-    "SYCA03": {"nom": "Syrah Vigne", "cepage": "Syrah", "surface": 3.00, "annee": 2008, "lat": 43.4260, "lon": 3.0815},
-    "GRCA01": {"nom": "Grenache Coste", "cepage": "Grenache", "surface": 1.85, "annee": 2002, "lat": 43.4215, "lon": 3.0780},
-    "MACA01": {"nom": "Marselan", "cepage": "Marselan", "surface": 1.20, "annee": 2019, "lat": 43.4200, "lon": 3.0760},
-}
 
+   # --- DÉCOUPAGE DE "LA PLAINE" EN 5 PARCELLES DISTINCTES ---
+    
+    "VIGA_PL1": {
+        "nom": "La Plaine 1 (Nord-Est)", "cepage": "Viognier", "surface": 0.50, "annee": 2015, 
+        "lat": 43.4289, "lon": 3.0930, # Point central calculé
+        "geometry": {
+            "type": "Polygon",
+            "coordinates": [[
+                [3.092493, 43.429614], [3.092055, 43.428946], [3.093490, 43.428517], 
+                [3.093604, 43.428660], [3.093541, 43.428766], [3.093464, 43.428844], 
+                [3.093363, 43.428914], [3.093242, 43.428914], [3.093128, 43.428932], 
+                [3.092595, 43.429582], [3.092493, 43.429614]
+            ]]
+        }
+    },
+
+    "VIGA_PL2": {
+        "nom": "La Plaine 2 (Centre)", "cepage": "Viognier", "surface": 0.50, "annee": 2015,
+        "lat": 43.4280, "lon": 3.0915,
+        "geometry": {
+            "type": "Polygon",
+            "coordinates": [[
+                [3.091501, 43.429019], [3.091162, 43.428491], [3.091705, 43.428113], 
+                [3.091867, 43.428020], [3.091113, 43.426822], [3.091776, 43.426797], 
+                [3.092495, 43.426894], [3.092798, 43.427365], [3.093003, 43.427693], 
+                [3.093447, 43.428450], [3.092072, 43.428886], [3.091501, 43.429019]
+            ]]
+        }
+    },
+
+    "VIGA_PL3": {
+        "nom": "La Plaine 3 (Est)", "cepage": "Viognier", "surface": 0.50, "annee": 2015,
+        "lat": 43.4280, "lon": 3.0938,
+        "geometry": {
+            "type": "Polygon",
+            "coordinates": [[
+                [3.094155, 43.428700], [3.093952, 43.428501], [3.093641, 43.428575], 
+                [3.092930, 43.427353], [3.093673, 43.427178], [3.094435, 43.428640], 
+                [3.094155, 43.428700]
+            ]]
+        }
+    },
+
+    "VIGA_PL4": {
+        "nom": "La Plaine 4 (Ouest)", "cepage": "Viognier", "surface": 0.50, "annee": 2015,
+        "lat": 43.4280, "lon": 3.0905,
+        "geometry": {
+            "type": "Polygon",
+            "coordinates": [[
+                [3.091457, 43.429064], [3.090289, 43.429451], [3.089769, 43.429290], 
+                [3.090080, 43.428529], [3.089832, 43.428031], [3.090270, 43.426915], 
+                [3.091108, 43.426837], [3.091832, 43.428013], [3.091146, 43.428492], 
+                [3.091457, 43.429064]
+            ]]
+        }
+    },
+
+    "VIGA_PL5": {
+        "nom": "La Plaine 5 (Sud-Ouest)", "cepage": "Viognier", "surface": 0.50, "annee": 2015,
+        "lat": 43.4280, "lon": 3.0890,
+        "geometry": {
+            "type": "Polygon",
+            "coordinates": [[
+                [3.089321, 43.429010], [3.088299, 43.428567], [3.088895, 43.427018], 
+                [3.090190, 43.426916], [3.089321, 43.429010]
+            ]]
+        }
+    },
+    }
 # Calculs automatiques
 annee_actuelle = datetime.now().year
 for code, data in DATA_PARCELLES.items():
