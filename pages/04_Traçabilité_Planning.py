@@ -8,106 +8,174 @@ from datetime import datetime
 # --- CONFIGURATION DE LA PAGE ---
 st.set_page_config(layout="wide", page_title="Pilotage & Traçabilité")
 
-st.title("🚜 Pilotage des Parcelles & ITK")
+st.title("🍇 Pilotage du Vignoble - La Gauphine")
 
-# --- 1. CRÉATION DES DONNÉES (Simulation de ta base de données) ---
+# --- 1. DONNÉES RÉELLES (EXTRAITES DE TES IMAGES) ---
 
-# Liste des parcelles (Simulées)
-DATA_PARCELLES = {
-    "P1": {"nom": "Les Vignes du Nord", "surface": 5.4, "culture": "Vigne", "lat": 43.60, "lon": 3.88, "color": "green"},
-    "P2": {"nom": "Le Champ du Moulin", "surface": 12.1, "culture": "Blé Tendre", "lat": 43.61, "lon": 3.90, "color": "orange"},
-    "P3": {"nom": "Verger Sud", "surface": 3.2, "culture": "Pommes", "lat": 43.59, "lon": 3.87, "color": "red"},
+# Dictionnaire des couleurs par cépage (inspiré de ton Excel)
+COLOR_MAP = {
+    "Viognier": "blue",
+    "Chardonnay": "orange", # Jaune est peu visible sur une carte, orange est mieux
+    "Syrah": "red",
+    "Grenache": "darkred"
 }
 
-# Liste des tâches ITK (Simulées)
-# On imagine une liste de tâches avec dates, statuts, etc.
-data_itk = [
-    {"parcelle_id": "P1", "tache": "Taille", "start": "2024-01-10", "end": "2024-01-25", "statut": "Fini", "color": "green"},
-    {"parcelle_id": "P1", "tache": "Fertilisation", "start": "2024-03-01", "end": "2024-03-05", "statut": "A faire", "color": "gray"},
-    {"parcelle_id": "P2", "tache": "Semis", "start": "2023-10-15", "end": "2023-10-20", "statut": "Fini", "color": "green"},
-    {"parcelle_id": "P2", "tache": "Fongicide T1", "start": "2024-04-10", "end": "2024-04-12", "statut": "En cours", "color": "blue"},
-    {"parcelle_id": "P3", "tache": "Récolte", "start": "2024-09-01", "end": "2024-09-15", "statut": "Planifié", "color": "gray"},
-]
-df_itk = pd.DataFrame(data_itk)
+# Tes Parcelles (J'ai simulé les coordonnées GPS exactes autour de Cessenon/Cazouls)
+DATA_PARCELLES = {
+    "VIGA03": {
+        "nom": "Vio Fournic bas JL", 
+        "cepage": "Viognier", 
+        "surface": 2.2800, 
+        "annee": 1997, 
+        "cadastre": "C959, C960",
+        "lat": 43.4210, "lon": 3.0810 
+    },
+    "VIGA01": {
+        "nom": "Vio Jeune JL", 
+        "cepage": "Viognier", 
+        "surface": 2.7032, 
+        "annee": 2001, 
+        "cadastre": "C1938",
+        "lat": 43.4225, "lon": 3.0830 
+    },
+    "VIGA04": {
+        "nom": "Vio Plantier JL", 
+        "cepage": "Viognier", 
+        "surface": 2.5400, 
+        "annee": 2014, 
+        "cadastre": "C1947...",
+        "lat": 43.4205, "lon": 3.0850 
+    },
+    "CHGA041": {
+        "nom": "Chardo 11", 
+        "cepage": "Chardonnay", 
+        "surface": 2.5300, 
+        "annee": 2011, 
+        "cadastre": "C953...",
+        "lat": 43.4190, "lon": 3.0800 
+    },
+    "CHGA042": {
+        "nom": "Chardo 12", 
+        "cepage": "Chardonnay", 
+        "surface": 4.5345, 
+        "annee": 2012, 
+        "cadastre": "C955...",
+        "lat": 43.4185, "lon": 3.0820 
+    },
+}
 
-# --- 2. INTERFACE : COLONNE GAUCHE (CARTE) / COLONNE DROITE (DÉTAILS) ---
+# Enrichissement automatique des données (Couleurs, Age...)
+annee_actuelle = datetime.now().year
+for code, data in DATA_PARCELLES.items():
+    data["age"] = annee_actuelle - data["annee"]
+    data["color"] = COLOR_MAP.get(data["cepage"], "gray")
 
-col1, col2 = st.columns([1, 1.5]) # La colonne de droite est un peu plus large
+# Planning ITK (Reconstitué pour la campagne 2026)
+# J'ai mis des dates types pour la région.
+data_itk_list = []
+for code in DATA_PARCELLES.keys():
+    # Tâches communes à toutes les parcelles pour l'exemple
+    data_itk_list.extend([
+        {"parcelle_id": code, "tache": "Taille d'hiver", "start": "2025-12-01", "end": "2026-02-15", "statut": "En cours"},
+        {"parcelle_id": code, "tache": "Broyage Sarments", "start": "2026-02-20", "end": "2026-03-01", "statut": "A faire"},
+        {"parcelle_id": code, "tache": "Entretien du sol (Méca)", "start": "2026-03-15", "end": "2026-04-01", "statut": "A faire"},
+        {"parcelle_id": code, "tache": "Ebourgeonnage", "start": "2026-04-15", "end": "2026-05-05", "statut": "Planifié"},
+        {"parcelle_id": code, "tache": "Traitements (Mildiou/Oïdium)", "start": "2026-05-10", "end": "2026-07-30", "statut": "Planifié"},
+        {"parcelle_id": code, "tache": "Vendanges", "start": "2026-08-25", "end": "2026-09-10", "statut": "Planifié"},
+    ])
 
-with col1:
-    st.subheader("🗺️ Vue Carte")
-    st.info("Clique sur un marqueur pour voir les détails.")
-    
-    # Création de la carte centrée (ici sur une zone fictive sud France)
-    m = folium.Map(location=[43.60, 3.89], zoom_start=13)
+df_itk = pd.DataFrame(data_itk_list)
 
-    # Ajout des marqueurs pour chaque parcelle
-    for pid, info in DATA_PARCELLES.items():
+
+# --- 2. INTERFACE : LA CARTE (EN HAUT) ---
+st.subheader("🗺️ Carte du Vignoble")
+
+col_map, col_legend = st.columns([4, 1])
+
+with col_map:
+    # Centrage automatique sur la moyenne des points
+    avg_lat = sum([d['lat'] for d in DATA_PARCELLES.values()]) / len(DATA_PARCELLES)
+    avg_lon = sum([d['lon'] for d in DATA_PARCELLES.values()]) / len(DATA_PARCELLES)
+
+    m = folium.Map(location=[avg_lat, avg_lon], zoom_start=15)
+
+    # Ajout des parcelles
+    for code, info in DATA_PARCELLES.items():
         folium.Marker(
             [info["lat"], info["lon"]],
-            popup=info["nom"],
-            tooltip=info["nom"],
-            # On utilise l'ID comme identifiant pour le clic
-            icon=folium.Icon(color=info["color"], icon="leaf")
+            popup=f"<b>{info['nom']}</b><br>{info['cepage']}",
+            tooltip=f"{code} - {info['cepage']}",
+            icon=folium.Icon(color=info["color"], icon="leaf", prefix="fa")
         ).add_to(m)
 
-    # Affichage de la carte et récupération du clic
-    # C'est ici que la magie opère : st_folium renvoie les infos de l'interaction
-    map_output = st_folium(m, height=400, width="100%")
+    map_output = st_folium(m, height=450, use_container_width=True)
 
-with col2:
-    st.subheader("📋 Détails & Planning")
+with col_legend:
+    st.write("**Légende :**")
+    st.caption(f"🔵 Viognier")
+    st.caption(f"🟠 Chardonnay")
+    st.caption(f"🔴 Syrah (Exemple)")
 
-    # Logique de sélection
-    selected_parcelle_id = None
+
+# --- 3. INTERFACE : LES DÉTAILS (EN DESSOUS) ---
+selected_code = None
+
+# Détection du clic sur la carte
+if map_output["last_object_clicked"]:
+    lat_clic = map_output["last_object_clicked"]["lat"]
+    # On retrouve la parcelle par sa latitude (méthode simple)
+    for code, info in DATA_PARCELLES.items():
+        # On compare avec une petite marge d'erreur car les floats sont capricieux
+        if abs(info["lat"] - lat_clic) < 0.0001:
+            selected_code = code
+            break
+
+if selected_code:
+    parcelle = DATA_PARCELLES[selected_code]
     
-    # On regarde si l'utilisateur a cliqué sur un marqueur
-    if map_output["last_object_clicked"]:
-        # On essaie de retrouver quelle parcelle correspond aux coordonnées cliquées
-        lat_clic = map_output["last_object_clicked"]["lat"]
-        # Recherche simple par latitude (pour l'exemple)
-        for pid, info in DATA_PARCELLES.items():
-            if info["lat"] == lat_clic:
-                selected_parcelle_id = pid
-                break
+    st.divider()
+    st.markdown(f"### 🍇 {parcelle['nom']} <span style='font-size:0.7em; color:gray'>({selected_code})</span>", unsafe_allow_html=True)
     
-    # --- AFFICHAGE CONDITIONNEL ---
-    if selected_parcelle_id:
-        parcelle = DATA_PARCELLES[selected_parcelle_id]
+    # 1. Cartouche d'identité
+    c1, c2, c3, c4 = st.columns(4)
+    c1.metric("Surface", f"{parcelle['surface']} ha")
+    c2.metric("Cépage", parcelle['cepage'], delta_color="off")
+    c3.metric("Age de la vigne", f"{parcelle['age']} ans", help=f"Plantée en {parcelle['annee']}")
+    c4.metric("Cadastre", parcelle['cadastre'])
+    
+    # 2. Planning
+    st.subheader(f"📅 Calendrier des travaux 2026")
+    
+    df_filtered = df_itk[df_itk["parcelle_id"] == selected_code]
+    
+    if not df_filtered.empty:
+        # Configuration des couleurs du GANTT
+        colors_gantt = {
+            "Fini": "#2ecc71",      # Vert
+            "En cours": "#3498db",  # Bleu
+            "A faire": "#f1c40f",   # Jaune/Orange
+            "Planifié": "#95a5a6"   # Gris
+        }
         
-        # 1. Cartouche d'infos (Metrics)
-        c1, c2, c3 = st.columns(3)
-        c1.metric("Nom", parcelle["nom"])
-        c2.metric("Surface", f"{parcelle['surface']} ha")
-        c3.metric("Culture", parcelle["culture"])
+        fig = px.timeline(
+            df_filtered, 
+            x_start="start", x_end="end", y="tache", color="statut",
+            color_discrete_map=colors_gantt,
+            category_orders={"statut": ["Fini", "En cours", "A faire", "Planifié"]}
+        )
         
-        st.divider()
+        fig.update_yaxes(autorange="reversed", title="") # Ordre chrono
+        fig.update_layout(
+            xaxis_title="",
+            height=350,
+            margin=dict(l=0, r=0, t=30, b=0),
+            showlegend=True
+        )
         
-        # 2. Planning GANTT (Filtré sur la parcelle sélectionnée)
-        st.write(f"📅 **Calendrier ITK - {parcelle['nom']}**")
+        st.plotly_chart(fig, use_container_width=True)
         
-        # Filtrer le DataFrame pour ne garder que cette parcelle
-        df_filtered = df_itk[df_itk["parcelle_id"] == selected_parcelle_id]
-        
-        if not df_filtered.empty:
-            fig = px.timeline(
-                df_filtered, 
-                x_start="start", 
-                x_end="end", 
-                y="tache", 
-                color="statut",
-                title="Avancement des tâches",
-                color_discrete_map={"Fini": "green", "En cours": "blue", "A faire": "gray", "Planifié": "lightgray"}
-            )
-            # Amélioration du look du Gantt
-            fig.update_yaxes(autorange="reversed") # Tâches dans l'ordre chronologique
-            st.plotly_chart(fig, use_container_width=True)
-            
-            # 3. Tableau de données brutes (facultatif mais utile)
-            with st.expander("Voir les données brutes"):
-                st.dataframe(df_filtered)
-        else:
-            st.warning("Aucune tâche planifiée pour cette parcelle.")
-            
     else:
-        st.write("👈 **Veuillez sélectionner une parcelle sur la carte pour voir son itinéraire technique.**")
+        st.info("Pas d'itinéraire technique défini pour cette parcelle.")
+        
+else:
+    st.info("👆 Cliquez sur un marqueur bleu ou orange sur la carte pour voir le détail de la parcelle.")
