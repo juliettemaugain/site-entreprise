@@ -111,15 +111,6 @@ with col_legend:
 
 
 # --- 4. DÉTAILS & GESTION (BAS DE PAGE) ---
-selected_code = None
-
-if map_output["last_object_clicked"]:
-    lat_clic = map_output["last_object_clicked"]["lat"]
-    for code, info in DATA_PARCELLES.items():
-        if abs(info["lat"] - lat_clic) < 0.0001:
-            selected_code = code
-            break
-
 if selected_code:
     parcelle = DATA_PARCELLES[selected_code]
     
@@ -129,6 +120,16 @@ if selected_code:
 
     # Préparation des données pour cette parcelle
     df_global = pd.DataFrame(st.session_state.db_itk)
+    
+    # --- CORRECTION DU BUG (SÉCURITÉ) ---
+    # Si d'anciennes tâches n'ont pas de couleur, on met du bleu par défaut pour éviter le plantage
+    if "color_hex" not in df_global.columns:
+        df_global["color_hex"] = "#3498db"
+    else:
+        # Remplit les trous éventuels
+        df_global["color_hex"] = df_global["color_hex"].fillna("#3498db")
+    # ------------------------------------
+
     # Conversion dates
     df_global["start"] = pd.to_datetime(df_global["start"])
     df_global["end"] = pd.to_datetime(df_global["end"])
@@ -136,6 +137,7 @@ if selected_code:
     # Filtrer pour la parcelle active
     df_filtered = df_global[df_global["parcelle_id"] == selected_code].copy()
 
+   
     # --- GRAPHIQUE GANTT ---
     if not df_filtered.empty:
         # On utilise la colonne 'color_hex' pour définir la couleur exacte choisie
