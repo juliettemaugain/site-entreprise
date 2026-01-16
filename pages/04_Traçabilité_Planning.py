@@ -273,10 +273,10 @@ if "db_itk" not in st.session_state:
 st.subheader("🗺️ Carte du Vignoble")
 
 def generate_map():
+    # Centrage automatique de la carte
     avg_lat = sum([d['lat'] for d in DATA_PARCELLES.values()]) / len(DATA_PARCELLES)
     avg_lon = sum([d['lon'] for d in DATA_PARCELLES.values()]) / len(DATA_PARCELLES)
     
-    # On passe en fond "CartoDB positron" (plus clair/propre) ou on garde Satellite
     m = folium.Map(location=[avg_lat, avg_lon], zoom_start=16)
     
     # Fond Satellite
@@ -292,28 +292,28 @@ def generate_map():
                 info["geometry"],
                 style_function=lambda x, c=info.get("color","gray"): {
                     'fillColor': c, 
-                    'color': 'white', # Contour blanc pour bien délimiter
+                    'color': 'white',       # Contour blanc fin
                     'weight': 1, 
-                    'fillOpacity': 0.5
+                    'fillOpacity': 0.5      # Transparence pour voir les rangs dessous
                 },
                 tooltip=f"{info['nom']} ({info['surface']} ha)"
             ).add_to(m)
         
-        # 2. LE NOM (AU LIEU DE L'ÉPINGLE)
-        # On utilise DivIcon pour écrire du texte HTML directement sur la carte
+        # 2. LE NOM (TEXTE FLOTTANT SANS CADRE)
         folium.map.Marker(
             [info["lat"], info["lon"]],
             icon=folium.DivIcon(
                 icon_size=(150, 36),
-                icon_anchor=(75, 18), # Pour centrer le texte
+                icon_anchor=(75, 18), # Centre le texte sur le point
                 html=f"""
                     <div style="
-                        font-size: 10px; 
+                        font-size: 11px; 
                         font-weight: bold; 
                         color: white; 
-                        text-shadow: 1px 1px 2px black; 
+                        text-shadow: 2px 2px 4px #000000; 
                         text-align: center;
                         white-space: nowrap;
+                        pointer-events: none; 
                     ">
                         {info['nom']}
                     </div>
@@ -321,16 +321,55 @@ def generate_map():
             )
         ).add_to(m)
         
-        # Astuce : On ajoute un cercle invisible au centre pour aider le clic si besoin
+        # 3. ZONE DE CLIC INVISIBLE (Pour faciliter la sélection)
+        # On place un cercle transparent au centre pour être sûr de capter le clic
         folium.CircleMarker(
             [info["lat"], info["lon"]],
-            radius=10, fill_opacity=0, opacity=0
+            radius=15,
+            fill_color=info.get("color","gray"),
+            fill_opacity=0.0, # Invisible
+            stroke=False
         ).add_to(m)
 
     return m
 
+# Affichage de la carte
 m = generate_map()
-# ... la suite reste identique (st_folium etc.)
+col_map, col_legend = st.columns([5, 1])
+
+with col_map:
+    map_output = st_folium(m, height=550, use_container_width=True)
+
+with col_legend:
+    st.markdown("**Légende**")
+    for cepage, color in COLOR_MAP.items():
+        st.markdown(f"<span style='color:{color};'>■</span> {cepage}", unsafe_allow_html=True)
+
+
+# --- LOGIQUE DE SÉLECTION INTELLIGENTE ---
+selected_code_map = None
+
+# Si on clique sur la carte...
+if map_output["last_object_clicked"]:
+    lat_clic = map_output["last_object_clicked"]["lat"]
+    lon_clic = map_output["last_object_clicked"]["lng"]
+
+    # On cherche la parcelle la plus proche du point cliqué
+    min_dist = 1000 # Distance arbitraire grande au début
+    closest_code = None
+    
+    for code, info in DATA_PARCELLES.items():
+        # Calcul simple de distance (Théorème de Pythagore)
+        dist = ((info["lat"] - lat_clic)**2 + (info["lon"] - lon_clic)**2)**0.5
+        
+        # Si le clic est à moins de ~200-300 mètres du centre de la parcelle
+        if dist < 0.003: 
+            if dist < min_dist:
+                min_dist = dist
+                closest_code = code
+    
+    if closest_code:
+        selected_code_map = closest_code
 
 # --- 4. ONGLETS PRINCIPAUX ---
 st.divider()
