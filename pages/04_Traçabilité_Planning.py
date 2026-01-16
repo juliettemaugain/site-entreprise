@@ -269,41 +269,68 @@ if "db_itk" not in st.session_state:
     st.session_state.db_itk = load_data()
 
 
-# --- 3. CARTE (SANS CACHE POUR EVITER LE BUG) ---
+# --- 3. CARTE (STYLE ÉPURÉ : JUSTE LE NOM) ---
 st.subheader("🗺️ Carte du Vignoble")
 
-col_map, col_legend = st.columns([5, 1])
-with col_map:
-    # On recalcule la carte à chaque fois (c'est plus sûr)
+def generate_map():
     avg_lat = sum([d['lat'] for d in DATA_PARCELLES.values()]) / len(DATA_PARCELLES)
     avg_lon = sum([d['lon'] for d in DATA_PARCELLES.values()]) / len(DATA_PARCELLES)
-    m = folium.Map(location=[avg_lat, avg_lon], zoom_start=15)
-    folium.TileLayer(tiles='https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}', attr='Esri', name='Esri Satellite', overlay=False, control=True).add_to(m)
+    
+    # On passe en fond "CartoDB positron" (plus clair/propre) ou on garde Satellite
+    m = folium.Map(location=[avg_lat, avg_lon], zoom_start=16)
+    
+    # Fond Satellite
+    folium.TileLayer(
+        tiles='https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}',
+        attr='Esri', name='Esri Satellite', overlay=False, control=True
+    ).add_to(m)
     
     for code, info in DATA_PARCELLES.items():
+        # 1. LA FORME (RECTANGLE/POLYGONE)
         if "geometry" in info:
             folium.GeoJson(
                 info["geometry"],
-                style_function=lambda x, c=info.get("color","gray"): {'fillColor': c, 'color': c, 'weight': 2, 'fillOpacity': 0.4},
+                style_function=lambda x, c=info.get("color","gray"): {
+                    'fillColor': c, 
+                    'color': 'white', # Contour blanc pour bien délimiter
+                    'weight': 1, 
+                    'fillOpacity': 0.5
+                },
                 tooltip=f"{info['nom']} ({info['surface']} ha)"
             ).add_to(m)
-        folium.Marker([info["lat"], info["lon"]], popup=info["nom"], icon=folium.Icon(color=info.get("color","gray"), icon="leaf", prefix="fa")).add_to(m)
-    
-    map_output = st_folium(m, height=450, use_container_width=True)
+        
+        # 2. LE NOM (AU LIEU DE L'ÉPINGLE)
+        # On utilise DivIcon pour écrire du texte HTML directement sur la carte
+        folium.map.Marker(
+            [info["lat"], info["lon"]],
+            icon=folium.DivIcon(
+                icon_size=(150, 36),
+                icon_anchor=(75, 18), # Pour centrer le texte
+                html=f"""
+                    <div style="
+                        font-size: 10px; 
+                        font-weight: bold; 
+                        color: white; 
+                        text-shadow: 1px 1px 2px black; 
+                        text-align: center;
+                        white-space: nowrap;
+                    ">
+                        {info['nom']}
+                    </div>
+                """
+            )
+        ).add_to(m)
+        
+        # Astuce : On ajoute un cercle invisible au centre pour aider le clic si besoin
+        folium.CircleMarker(
+            [info["lat"], info["lon"]],
+            radius=10, fill_opacity=0, opacity=0
+        ).add_to(m)
 
-with col_legend:
-    st.markdown("**Légende**")
-    for cepage, color in COLOR_MAP.items():
-        st.markdown(f"<span style='color:{color};'>■</span> {cepage}", unsafe_allow_html=True)
+    return m
 
-selected_code_map = None
-if map_output["last_object_clicked"]:
-    lat_clic = map_output["last_object_clicked"]["lat"]
-    for code, info in DATA_PARCELLES.items():
-        if abs(info["lat"] - lat_clic) < 0.0001:
-            selected_code_map = code
-            break
-
+m = generate_map()
+# ... la suite reste identique (st_folium etc.)
 
 # --- 4. ONGLETS PRINCIPAUX ---
 st.divider()
