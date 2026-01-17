@@ -376,12 +376,34 @@ st.divider()
 tab_view, tab_plan, tab_phyto, tab_stats, tab_data = st.tabs(["🔍 Détail Parcelle", "🚜 Planif Groupée", "🧪 Traitements Phyto", "📊 Statistiques", "🗃️ Data"])
 
 # =========================================================
+## =========================================================
 # ONGLET 1 : DÉTAIL PARCELLE (Modif Standard)
 # =========================================================
-if not df_filtered.empty:
+with tab_view:
+    if selected_code_map:
+        # 1. EN-TÊTE DE LA PARCELLE
+        parcelle = DATA_PARCELLES[selected_code_map]
+        st.markdown(f"### 🍇 {parcelle['nom']} <span style='font-size:0.7em; color:gray'>({parcelle['cepage']} - {parcelle['surface']} ha)</span>", unsafe_allow_html=True)
+        
+        # 2. PRÉPARATION DES DONNÉES
+        df_global = pd.DataFrame(st.session_state.db_itk)
+        
+        # Sécurisation des colonnes manquantes
+        for col in ["color_hex", "categorie", "materiel", "cadence", "jours_estimes", "statut", "ift_value"]:
+            if col not in df_global.columns: df_global[col] = None
+        
+        # Remplissage par défaut et conversion dates
+        df_global = df_global.fillna(value={"color_hex":"#3498db", "ift_value":0.0})
+        df_global["start"] = pd.to_datetime(df_global["start"])
+        df_global["end"] = pd.to_datetime(df_global["end"])
+        
+        # Filtrage pour la parcelle sélectionnée
+        df_filtered = df_global[df_global["parcelle_id"] == selected_code_map].copy()
+
+        if not df_filtered.empty:
             color_map_gantt = {row["tache"]: row["color_hex"] for index, row in df_filtered.iterrows()}
             
-            # 1. Création du graphique de base
+            # 3. CRÉATION DU GRAPHIQUE AVEC INFOBULLE PERSONNALISÉE
             fig = px.timeline(
                 df_filtered, 
                 x_start="start", x_end="end", 
@@ -389,18 +411,18 @@ if not df_filtered.empty:
                 color="tache",
                 color_discrete_map=color_map_gantt,
                 title="Planning des travaux",
-                # On passe les données qu'on veut afficher en "données cachées" (custom_data)
+                # On charge les données nécessaires pour l'infobulle ici
                 custom_data=["start", "end", "jours_estimes", "statut"]
             )
             
-            # 2. Personnalisation totale de l'infobulle (Hover)
+            # MISE EN FORME DE L'INFOBULLE (HOVER)
             fig.update_traces(
                 hovertemplate=(
-                    "<b style='font-size: 16px'>%{y}</b><br>" +  # Le nom de la tâche en gros
-                    "📅 Du %{customdata[0]|%d/%m/%Y} au %{customdata[1]|%d/%m/%Y}<br>" + # Les dates formatées
-                    "⏳ Durée prévue : <b>%{customdata[2]:.1f} jours</b><br>" + # Jours en gras
+                    "<b style='font-size: 16px'>%{y}</b><br>" +  # Nom de la tâche en gros
+                    "📅 Du %{customdata[0]|%d/%m/%Y} au %{customdata[1]|%d/%m/%Y}<br>" + # Dates formatées
+                    "⏳ Durée : <b>%{customdata[2]:.1f} jours</b><br>" + # Durée en gras
                     "📌 Statut : %{customdata[3]}" + 
-                    "<extra></extra>" # Supprime la petite boîte inutile à côté
+                    "<extra></extra>" # Supprime le surplus inutile
                 )
             )
 
@@ -408,11 +430,13 @@ if not df_filtered.empty:
             st.plotly_chart(fig, use_container_width=True)
             
             st.divider()
-            # ... (La suite du code pour la modification reste inchangée)
+            
+            # 4. ZONE DE MODIFICATION (Uniquement pour les tâches NON Phyto)
             st.caption("Pour modifier/supprimer une tâche standard :")
             
-            # --- MODIFICATION STANDARD ---
-            task_options = df_filtered[df_filtered["categorie"] != "Traitements"].to_dict('records') # On cache les phytos ici
+            # On exclut les "Traitements" de cette liste (ils ont leur propre onglet)
+            task_options = df_filtered[df_filtered["categorie"] != "Traitements"].to_dict('records') 
+            
             if task_options:
                 def format_func(task):
                     d = task['start'].strftime('%d/%m') if isinstance(task['start'], (datetime, pd.Timestamp)) else str(task['start'])
@@ -421,6 +445,7 @@ if not df_filtered.empty:
                 selected_task = st.selectbox("Choisir tâche (hors phyto)", task_options, format_func=format_func)
                 
                 if selected_task:
+                    # On retrouve l'index réel dans la base globale
                     real_index = next((i for i, item in enumerate(st.session_state.db_itk) if item["id"] == selected_task["id"]), -1)
                     
                     with st.form(key="edit_std"):
@@ -431,23 +456,29 @@ if not df_filtered.empty:
                         with c2:
                             d1 = st.date_input("Début", selected_task["start"])
                             d2 = st.date_input("Fin", selected_task["end"])
-                        del_chk = st.checkbox("Supprimer ?")
+                        del_chk = st.checkbox("Supprimer cette tâche ?")
                         
-                        if st.form_submit_button("Modifier"):
+                        if st.form_submit_button("Enregistrer les modifications"):
                             if del_chk:
                                 del st.session_state.db_itk[real_index]
-                                st.success("Supprimé !")
+                                st.success("Tâche supprimée !")
                             else:
-                                st.session_state.db_itk[real_index].update({"statut": ns, "color_hex": nc, "start": d1, "end": d2})
-                                st.success("À jour !")
+                                st.session_state.db_itk[real_index].update({
+                                    "statut": ns, 
+                                    "color_hex": nc, 
+                                    "start": d1, 
+                                    "end": d2
+                                })
+                                st.success("Mise à jour effectuée !")
+                            
                             save_data()
                             st.rerun()
             else:
-                st.info("Aucune tâche standard modifiable.")
+                st.info("Aucune tâche standard modifiable (seulement des traitements ?).")
         else:
-            st.info("Aucune intervention.")
+            st.info("Aucune intervention planifiée sur cette parcelle.")
     else:
-        st.info("👆 Cliquez sur une parcelle.")
+        st.info("👆 Cliquez sur une parcelle sur la carte pour voir le détail.")
 
 
 # =========================================================
