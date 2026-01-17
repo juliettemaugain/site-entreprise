@@ -486,22 +486,60 @@ with tab_view:
     else:
         st.info("👆 Cliquez sur une parcelle sur la carte pour voir le détail.")
 
-# =========================================================
-# ONGLET 2 : PLANIF GROUPÉE (BIEN PRÉSENT !)
+## =========================================================
+# ONGLET 2 : PLANIF GROUPÉE (AMÉLIORÉ : TRI + RECHERCHE + TOUT SÉLECTIONNER)
 # =========================================================
 with tab_plan:
     st.subheader("🛠️ Ajouter une intervention (Sauf Phyto)")
+    
     c_g, c_d = st.columns([1, 2])
+    
     with c_g:
-        sel_ids = st.multiselect("Parcelles", options=DATA_PARCELLES.keys(), default=[selected_code_map] if selected_code_map else [], format_func=lambda x: DATA_PARCELLES[x]['nom'])
+        # 1. TRI ALPHABÉTIQUE
+        # On crée une liste des IDs triés selon leur Nom
+        sorted_keys = sorted(DATA_PARCELLES.keys(), key=lambda x: DATA_PARCELLES[x]['nom'])
+
+        # 2. OPTION "TOUT SÉLECTIONNER"
+        col_check, col_info = st.columns([1, 1])
+        with col_check:
+            all_checked = st.checkbox("✅ Tout sélectionner")
+        
+        # Gestion de la sélection par défaut
+        if all_checked:
+            default_selection = sorted_keys
+        elif selected_code_map and selected_code_map in sorted_keys:
+            default_selection = [selected_code_map]
+        else:
+            default_selection = []
+
+        # 3. BARRE DE RECHERCHE & SÉLECTION
+        # st.multiselect fait office de barre de recherche : on peut taper dedans
+        sel_ids = st.multiselect(
+            "Rechercher & Sélectionner les parcelles", 
+            options=sorted_keys, 
+            default=default_selection, 
+            format_func=lambda x: DATA_PARCELLES[x]['nom']
+        )
+        
+        # Calculs de surface
         surf = sum([DATA_PARCELLES[p]['surface'] for p in sel_ids])
-        st.caption(f"Surface: {surf:.2f} ha")
+        st.info(f"📐 Surface sélectionnée : **{surf:.2f} ha**")
+        
+        st.write("---")
+        st.markdown("**Calculateur de temps**")
         cad = st.number_input("Cadence (h/ha)", 0.1, 100.0, 10.0)
         nb_p = st.number_input("Nb Pers", 1, 50, 1)
-        j_est = (surf * cad) / (nb_p * 6)
-        st.info(f"⏳ **{j_est:.1f} jours**")
+        
+        if surf > 0:
+            heures_tot = surf * cad
+            j_est = heures_tot / (nb_p * 7) # Base de 7h/jour par exemple
+            st.caption(f"Total heures : {heures_tot:.1f} h")
+            st.success(f"⏳ Durée estimée : **{j_est:.1f} jours** (à {nb_p} pers)")
+        else:
+            j_est = 1.0
 
     with c_d:
+        st.markdown("#### 📝 Détails de l'intervention")
         with st.form("bulk"):
             c1, c2 = st.columns(2)
             with c1:
@@ -511,21 +549,34 @@ with tab_plan:
             with c2:
                 n_m = st.text_input("Matériel")
                 n_s = st.selectbox("Statut", ["Planifié", "A faire", "En cours", "Fini"])
-            d1 = st.date_input("Début", date.today())
-            d2 = st.date_input("Fin", d1 + timedelta(days=int(j_est) if j_est>=1 else 1))
             
-            if st.form_submit_button("Valider"):
+            d1 = st.date_input("Début", date.today())
+            # On pré-remplit la date de fin avec l'estimation calculée
+            d2 = st.date_input("Fin", d1 + timedelta(days=int(j_est) if j_est>=1 else 0))
+            
+            if st.form_submit_button("✅ Valider l'ajout"):
                 if sel_ids:
                     ts = datetime.now().timestamp()
                     for pid in sel_ids:
                         st.session_state.db_itk.append({
-                            "id": f"{pid}_{ts}", "parcelle_id": pid, "tache": n_t, "categorie": n_c,
-                            "start": d1, "end": d2, "statut": n_s, "cadence": cad, "jours_estimes": j_est,
-                            "materiel": n_m, "color_hex": n_col, "ift_value": 0.0
+                            "id": f"{pid}_{ts}", 
+                            "parcelle_id": pid, 
+                            "tache": n_t, 
+                            "categorie": n_c,
+                            "start": d1, 
+                            "end": d2, 
+                            "statut": n_s, 
+                            "cadence": cad, 
+                            "jours_estimes": j_est,
+                            "materiel": n_m, 
+                            "color_hex": n_col, 
+                            "ift_value": 0.0
                         })
                     save_data()
-                    st.success("Ajouté !")
+                    st.success(f"Tâche ajoutée sur {len(sel_ids)} parcelles !")
                     st.rerun()
+                else:
+                    st.error("Veuillez sélectionner au moins une parcelle.")
 
 # =========================================================
 # ONGLET 3 : TRAITEMENTS PHYTO
