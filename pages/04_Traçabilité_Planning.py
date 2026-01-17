@@ -596,13 +596,13 @@ with tab_plan:
                 else:
                     st.error("Veuillez sélectionner au moins une parcelle.")
 
-# =========================================================
-# ONGLET 3 : TRAITEMENTS PHYTO
+## =========================================================
+# ONGLET 3 : TRAITEMENTS PHYTO (Calculateur de Cuve Avancé)
 # =========================================================
 with tab_phyto:
-    st.subheader("🧪 Traitements & Protection du Vignoble")
+    st.subheader("🧪 Traitements & Calcul de Bouillie")
     
-    # 1. VISUALISATION (GANTT AMÉLIORÉ)
+    # --- 1. VISUALISATION RAPIDE (Gantt) ---
     df_all_phyto = pd.DataFrame(st.session_state.db_itk)
     if not df_all_phyto.empty and "categorie" in df_all_phyto.columns:
         df_phyto_only = df_all_phyto[df_all_phyto["categorie"] == "Traitements"].copy()
@@ -611,127 +611,177 @@ with tab_phyto:
             df_phyto_only["end"] = pd.to_datetime(df_phyto_only["end"])
             df_phyto_only["Parcelle"] = df_phyto_only["parcelle_id"].apply(lambda x: DATA_PARCELLES.get(x, {}).get("nom", x))
             
-            st.markdown("##### 📅 Calendrier des Traitements")
-            fig_p = px.timeline(
-                df_phyto_only, x_start="start", x_end="end", y="Parcelle", 
-                color="tache", text="tache", title="",
-                height=350 + (len(df_phyto_only["Parcelle"].unique()) * 20)
-            )
-            # Autoscale et format date
-            fig_p.update_layout(
-                xaxis=dict(title="Date", tickformat="%d/%m", range=[date(date.today().year, 1, 1), date(date.today().year, 12, 31)]),
-                yaxis=dict(title=""), showlegend=True
-            )
-            fig_p.update_yaxes(autorange="reversed")
-            st.plotly_chart(fig_p, use_container_width=True)
-        else:
-            st.info("Aucun traitement enregistré.")
-    
+            with st.expander("Voir le calendrier des traitements passés", expanded=False):
+                fig_p = px.timeline(df_phyto_only, x_start="start", x_end="end", y="Parcelle", color="tache", text="tache", height=300)
+                fig_p.update_layout(xaxis=dict(title="Date", tickformat="%d/%m"), yaxis=dict(title=""))
+                fig_p.update_yaxes(autorange="reversed")
+                st.plotly_chart(fig_p, use_container_width=True)
+
     st.divider()
 
-    # 2. CALCULATEUR
-    col_left, col_right = st.columns([1.2, 1])
-    
-    with col_left:
-        st.markdown("#### 🚜 Nouvelle Application")
-        with st.form("phyto_new"):
-            # A. Parcelles
-            sel_parc = st.multiselect("Parcelles", options=DATA_PARCELLES.keys(), format_func=lambda x: DATA_PARCELLES[x]['nom'])
+    # --- 2. LE CALCULATEUR DE BOUILLIE ---
+    c_left, c_right = st.columns([1, 1.5])
+
+    # A. Initialisation du "Panier" de produits (Session State)
+    if "current_mix" not in st.session_state:
+        st.session_state.current_mix = []
+
+    with c_left:
+        st.markdown("#### 1. Configuration du Chantier")
+        with st.container(border=True):
+            # Sélection des parcelles
+            sel_parc = st.multiselect("Parcelles à traiter", options=DATA_PARCELLES.keys(), format_func=lambda x: DATA_PARCELLES[x]['nom'])
+            
+            # Calcul Surface
             surf_tot = sum([DATA_PARCELLES[p]['surface'] for p in sel_parc])
             
-            # B. Calibrage
-            st.markdown("**Calibrage**")
-            c1, c2, c3 = st.columns(3)
-            with c1:
-                vitesse = st.number_input("Vitesse (km/h)", 4.0, 10.0, 5.0)
-            with c2:
-                largeur = st.number_input("Largeur (m)", 1.0, 3.0, 2.5)
-            with c3:
-                vol_ha_cible = st.number_input("Objectif L/ha", 50, 500, 150)
-            
-            debit_requis = (vol_ha_cible * vitesse * largeur) / 600
-            st.info(f"💡 Débit requis : **{debit_requis:.2f} L/min** (pour {vol_ha_cible} L/ha)")
-            
-            vol_cuve_total = surf_tot * vol_ha_cible
-            st.markdown(f"👉 Volume Total Bouillie : **{vol_cuve_total:.0f} Litres**")
-            
-            # C. Produits
-            st.markdown("**Produits**")
-            prods = st.multiselect("Produits", options=DATA_PRODUITS.keys())
-            
-            details = []
-            ift_tot = 0.0
-            
-            if prods:
-                for p in prods:
-                    inf = DATA_PRODUITS[p]
-                    cc1, cc2 = st.columns([2, 1])
-                    with cc1:
-                        st.write(f"**{p}** (Ref: {inf['dose_ref']})")
-                    with cc2:
-                        d_u = st.number_input(f"Dose {p}", value=inf['dose_ref'], key=f"dphy_{p}")
-                    
-                    qte_p = d_u * surf_tot
-                    st.caption(f"-> Mettre **{qte_p:.2f} {inf['unite']}**")
-                    
-                    if inf['ift'] and inf['dose_ref'] > 0:
-                        ift_tot += (d_u / inf['dose_ref'])
-                    details.append(f"{p}: {d_u}{inf['unite']}")
+            if surf_tot > 0:
+                st.info(f"📐 Surface Totale : **{surf_tot:.2f} ha**")
+            else:
+                st.warning("Sélectionnez des parcelles pour commencer.")
 
-            d_app = st.date_input("Date Application", date.today())
-            n_app = st.text_input("Nom Traitement", "T... Mildiou/Oïdium")
+            st.write("---")
+            d_app = st.date_input("Date", date.today())
+            n_app = st.text_input("Nom du Traitement", "T... Mildiou/Oïdium")
+            
+            # Info Volume (Facultatif, pour info chauffeur)
+            vol_ha_cible = st.number_input("Volume Bouillie (L/ha)", 50, 1000, 150)
+            st.caption(f"💧 Volume total d'eau : **{surf_tot * vol_ha_cible:.0f} Litres**")
 
-            if st.form_submit_button("✅ Enregistrer Traitement"):
-                if sel_parc:
-                    ts = datetime.now().timestamp()
-                    str_d = " + ".join(details)
-                    for pid in sel_parc:
-                        st.session_state.db_itk.append({
-                            "id": f"{pid}_phy_{ts}", "parcelle_id": pid, "tache": n_app,
-                            "categorie": "Traitements", "start": d_app, "end": d_app,
-                            "statut": "Fini", "color_hex": "#8e44ad", "ift_value": ift_tot,
-                            "materiel": f"V:{vol_ha_cible}L/ha - {str_d}", "jours_estimes": 0.5
-                        })
-                    save_data()
-                    st.success("Enregistré !")
-                    st.rerun()
-                else:
-                    st.error("Choisir une parcelle")
-
-    with col_right:
-        st.markdown("#### ✏️ Modifier / Supprimer Phyto")
-        all_phyto_list = [t for t in st.session_state.db_itk if t.get("categorie") == "Traitements"]
+    with c_right:
+        st.markdown("#### 2. Composition de la Cuve (Produit par Produit)")
         
+        if surf_tot > 0:
+            with st.form("add_product_form", clear_on_submit=True):
+                c_p1, c_p2 = st.columns([2, 1])
+                
+                with c_p1:
+                    # Liste déroulante avec option "Autre"
+                    choix_prod = st.selectbox("Choisir Produit", list(DATA_PRODUITS.keys()) + ["✍️ Autre / Nouveau Produit..."])
+                    
+                    # Si "Autre", on affiche un champ texte
+                    nom_final_prod = choix_prod
+                    unite_ref = "kg/L" # Unité par défaut
+                    
+                    if choix_prod == "✍️ Autre / Nouveau Produit...":
+                        nom_custom = st.text_input("Nom du nouveau produit")
+                        if nom_custom:
+                            nom_final_prod = nom_custom
+                    else:
+                        # On récupère l'unité du produit connu
+                        unite_ref = DATA_PRODUITS[choix_prod]['unite']
+
+                with c_p2:
+                    dose_ha = st.number_input(f"Dose/ha ({unite_ref})", min_value=0.0, value=0.0, step=0.1, format="%.2f")
+
+                # Bouton pour ajouter dans la liste temporaire
+                ajout = st.form_submit_button("➕ Ajouter au mélange")
+                
+                if ajout:
+                    if dose_ha > 0:
+                        # Calcul de la quantité totale pour la cuve
+                        qte_cuve = dose_ha * surf_tot
+                        
+                        # Ajout au panier
+                        st.session_state.current_mix.append({
+                            "produit": nom_final_prod,
+                            "dose_ha": dose_ha,
+                            "qte_totale": qte_cuve,
+                            "unite": unite_ref
+                        })
+                        st.rerun() # On recharge pour afficher le tableau mis à jour
+                    else:
+                        st.error("Mettez une dose supérieure à 0.")
+
+            # --- AFFICHAGE DU RÉCAPITULATIF (LA RECETTE) ---
+            if st.session_state.current_mix:
+                st.markdown("##### 📋 Recette de la Cuve")
+                
+                # On transforme la liste en Joli Tableau
+                df_mix = pd.DataFrame(st.session_state.current_mix)
+                
+                # On renomme pour l'affichage
+                df_mix_display = df_mix.rename(columns={
+                    "produit": "Produit", 
+                    "dose_ha": "Dose / ha", 
+                    "qte_totale": "QUANTITÉ À METTRE",
+                    "unite": "Unité"
+                })
+                
+                # Affichage du tableau
+                st.dataframe(df_mix_display[["Produit", "Dose / ha", "Unité", "QUANTITÉ À METTRE"]], use_container_width=True, hide_index=True)
+                
+                # Boutons de Validation ou Reset
+                c_val, c_reset = st.columns([3, 1])
+                
+                with c_val:
+                    if st.button("✅ VALIDER ET ENREGISTRER LE TRAITEMENT", type="primary"):
+                        ts = datetime.now().timestamp()
+                        
+                        # On crée une description textuelle de tout le mélange pour l'historique
+                        desc_melange = " + ".join([f"{row['produit']} ({row['dose_ha']} {row['unite']}/ha)" for i, row in df_mix.iterrows()])
+                        desc_complete = f"Vol: {vol_ha_cible}L/ha | {desc_melange}"
+                        
+                        # Calcul IFT (Sommaire si possible, sinon 0)
+                        ift_total_est = 0.0 # À affiner plus tard si besoin
+                        
+                        for pid in sel_parc:
+                            st.session_state.db_itk.append({
+                                "id": f"{pid}_phy_{ts}", 
+                                "parcelle_id": pid, 
+                                "tache": n_app,
+                                "categorie": "Traitements", 
+                                "start": d_app, 
+                                "end": d_app,
+                                "statut": "Fini", 
+                                "color_hex": "#8e44ad", 
+                                "ift_value": ift_total_est,
+                                "materiel": desc_complete, 
+                                "jours_estimes": 0.5
+                            })
+                        
+                        save_data()
+                        st.session_state.current_mix = [] # On vide le panier
+                        st.success("Traitement enregistré !")
+                        st.rerun()
+                
+                with c_reset:
+                    if st.button("🗑️ Vider"):
+                        st.session_state.current_mix = []
+                        st.rerun()
+        else:
+            st.info("👈 Sélectionnez d'abord vos parcelles à gauche.")
+
+    st.divider()
+    
+    # 3. SUPPRESSION / MODIFICATION (Bas de page)
+    with st.expander("🛠️ Modifier / Supprimer un ancien traitement"):
+        all_phyto_list = [t for t in st.session_state.db_itk if t.get("categorie") == "Traitements"]
         if all_phyto_list:
             all_phyto_list.sort(key=lambda x: x['start'], reverse=True)
             def fmt_p(x):
                 pname = DATA_PARCELLES.get(x['parcelle_id'], {}).get('nom', '?')
                 return f"{x['start']} | {pname} | {x['tache']}"
 
-            sel_edit_phy = st.selectbox("Choisir un traitement passé", all_phyto_list, format_func=fmt_p)
+            sel_edit_phy = st.selectbox("Choisir un traitement", all_phyto_list, format_func=fmt_p)
             
             if sel_edit_phy:
                 idx_phy = next((i for i, item in enumerate(st.session_state.db_itk) if item["id"] == sel_edit_phy["id"]), -1)
-                
                 with st.form("edit_phyto_form"):
-                    st.write(f"**{sel_edit_phy['tache']}**")
                     new_n = st.text_input("Nom", sel_edit_phy['tache'])
-                    new_d = st.date_input("Date", pd.to_datetime(sel_edit_phy['start']))
-                    new_ift = st.number_input("IFT", value=float(sel_edit_phy.get('ift_value', 0.0)))
                     del_phy = st.checkbox("Supprimer définitivement ?")
-                    
                     if st.form_submit_button("Mettre à jour"):
                         if del_phy:
                             del st.session_state.db_itk[idx_phy]
                             st.success("Supprimé !")
                         else:
-                            st.session_state.db_itk[idx_phy].update({"tache": new_n, "start": new_d, "end": new_d, "ift_value": new_ift})
+                            st.session_state.db_itk[idx_phy].update({"tache": new_n})
                             st.success("Modifié !")
                         save_data()
                         st.rerun()
         else:
             st.info("Aucun historique.")
-
+            
 # =========================================================
 # ONGLET 4 : TABLEAU DE BORD INTERACTIF (MODIFICATION DIRECTE)
 # =========================================================
