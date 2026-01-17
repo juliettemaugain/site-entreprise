@@ -663,43 +663,114 @@ with tab_phyto:
         else:
             st.info("Aucun historique.")
 
-
 # =========================================================
-# ONGLET 4 : STATISTIQUES (RESTITUÉES !)
+# ONGLET 4 : TABLEAU DE BORD & AVANCEMENT (REFONDU)
 # =========================================================
 with tab_stats:
-    st.subheader("📊 Tableau de Bord")
+    st.subheader("📊 Tableau de Bord Global")
+    
     df_all = pd.DataFrame(st.session_state.db_itk)
     
     if not df_all.empty:
-        if "jours_estimes" not in df_all.columns: df_all["jours_estimes"] = 0.0
-        if "ift_value" not in df_all.columns: df_all["ift_value"] = 0.0
-        df_all["jours_estimes"] = df_all["jours_estimes"].fillna(0.0)
-        df_all["cepage"] = df_all["parcelle_id"].apply(lambda x: DATA_PARCELLES.get(x, {}).get("cepage", "?"))
-
-        k1, k2, k3, k4 = st.columns(4)
-        k1.metric("Total Heures Planifiées", f"{df_all['jours_estimes'].sum()*6:.0f} h")
-        k2.metric("Nb Interventions", len(df_all))
-        avg_ift = df_all.groupby("parcelle_id")["ift_value"].sum().mean()
-        k3.metric("IFT Moyen / Parcelle", f"{avg_ift:.2f}")
-        nb_fini = len(df_all[df_all["statut"] == "Fini"])
-        pct = (nb_fini / len(df_all) * 100) if len(df_all) > 0 else 0
-        k4.metric("Avancement Global", f"{pct:.0f} %")
+        # --- PRÉPARATION DES DONNÉES ---
+        # On s'assure que les dates sont au format datetime pour les calculs
+        df_all["start"] = pd.to_datetime(df_all["start"])
+        df_all["end"] = pd.to_datetime(df_all["end"])
         
+        # Calcul de l'avancement "Temps Réel" pour les tâches "En cours"
+        today = pd.Timestamp(date.today())
+        
+        def calc_progress(row):
+            if row["statut"] == "Fini": return 100
+            if row["statut"] == "Planifié" or row["statut"] == "A faire": return 0
+            # Si "En cours", on calcule le ratio temps écoulé
+            total_days = (row["end"] - row["start"]).days + 1
+            days_passed = (today - row["start"]).days + 1
+            if total_days <= 0: return 0
+            prog = (days_passed / total_days) * 100
+            return max(0, min(100, prog)) # Borner entre 0 et 100
+
+        df_all["progress"] = df_all.apply(calc_progress, axis=1)
+
+        # ---------------------------------------------------------
+        # 1. LA MATRICE D'AVANCEMENT (Vue Hélicoptère)
+        # ---------------------------------------------------------
+        st.markdown("#### 🧱 Matrice d'Avancement des Parcelles")
+        st.caption("🟢 Fini | 🟡 En cours | 🔵 Planifié | ⚪ Rien")
+
+        # On filtre pour ne garder que les tâches principales (pas les 50 phytos)
+        # Tu peux ajuster cette liste ou l'enlever pour tout voir
+        main_tasks = ["Taille & Tirage", "Enherbement", "Prétaille", "Epandage Compost", "Sécaille/Attachage", "Broyage du bois", "Epandage Engrais", "Désherbage"]
+        df_matrix = df_all[df_all["tache"].isin(main_tasks)].copy()
+        
+        # Si la liste est vide (noms différents), on prend tout sauf Phyto
+        if df_matrix.empty:
+            df_matrix = df_all[df_all["categorie"] != "Traitements"].copy()
+
+        # On ajoute le nom de la parcelle pour l'affichage
+        df_matrix["Nom_Parcelle"] = df_matrix["parcelle_id"].apply(lambda x: DATA_PARCELLES.get(x, {}).get("nom", x))
+
+        # PIVOT : On transforme la liste en grille
+        # Rows = Parcelle, Cols = Tache, Value = Statut
+        try:
+            pivot_status = df_matrix.pivot(index="Nom_Parcelle", columns="tache", values="statut")
+            
+            # Fonction de coloriage pour le tableau
+            def color_status(val):
+                color = 'white'
+                if val == 'Fini': color = '#d4edda' # Vert clair
+                elif val == 'En cours': color = '#fff3cd' # Jaune clair
+                elif val == 'Planifié': color = '#cce5ff' # Bleu clair
+                elif val == 'A faire': color = '#f8d7da' # Rouge clair
+                return f'background-color: {color}; color: black; border: 1px solid #dee2e6'
+
+            st.dataframe(pivot_status.style.applymap(color_status), use_container_width=True, height=400)
+        except Exception as e:
+            st.warning("Pas assez de données pour générer la matrice.")
+
         st.divider()
-        
-        g1, g2 = st.columns(2)
-        with g1:
-            st.markdown("##### Travail par Cépage")
-            grp_cep = df_all.groupby("cepage")["jours_estimes"].sum().reset_index()
-            st.plotly_chart(px.pie(grp_cep, values="jours_estimes", names="cepage", color="cepage", color_discrete_map=COLOR_MAP), use_container_width=True)
-        
-        with g2:
-            st.markdown("##### IFT par Parcelle")
-            grp_ift = df_all.groupby("parcelle_id")["ift_value"].sum().reset_index()
-            grp_ift["Nom"] = grp_ift["parcelle_id"].apply(lambda x: DATA_PARCELLES.get(x,{}).get("nom",x))
-            st.plotly_chart(px.bar(grp_ift, x="Nom", y="ift_value", color="ift_value", color_continuous_scale="Reds"), use_container_width=True)
 
+        # ---------------------------------------------------------
+        # 2. ZOOM SUR CE QUI EST "EN COURS" (Barres de progression)
+        # ---------------------------------------------------------
+        st.markdown("#### ⏳ Chantier en cours (Temps écoulé)")
+        
+        df_running = df_all[df_all["statut"] == "En cours"].copy()
+        
+        if not df_running.empty:
+            # On ajoute le nom
+            df_running["Nom_Parcelle"] = df_running["parcelle_id"].apply(lambda x: DATA_PARCELLES.get(x, {}).get("nom", x))
+            
+            for index, row in df_running.iterrows():
+                col_txt, col_bar = st.columns([1, 3])
+                with col_txt:
+                    st.text(f"{row['Nom_Parcelle']} : {row['tache']}")
+                with col_bar:
+                    # Affichage d'une barre de progression native Streamlit
+                    st.progress(int(row['progress']))
+                    st.caption(f"📅 Fin prévue le {row['end'].strftime('%d/%m')} ({int(row['progress'])}% du temps écoulé)")
+        else:
+            st.info("Aucun chantier marqué 'En cours' actuellement.")
+
+        st.divider()
+
+        # ---------------------------------------------------------
+        # 3. STATS GLOBALES (CAMEMBERTS)
+        # ---------------------------------------------------------
+        c1, c2 = st.columns(2)
+        with c1:
+            st.markdown("**Répartition par type de travail**")
+            fig_pie = px.pie(df_all, names="categorie", hole=0.4)
+            st.plotly_chart(fig_pie, use_container_width=True)
+        with c2:
+            st.markdown("**État d'avancement global**")
+            fig_statut = px.pie(df_all, names="statut", color="statut", 
+                                color_discrete_map={"Fini":"green", "En cours":"orange", "A faire":"red", "Planifié":"blue"})
+            st.plotly_chart(fig_statut, use_container_width=True)
+
+    else:
+        st.info("Aucune donnée pour les statistiques.")
+        
 # ONGLET 5 : DATA
 with tab_data:
     st.dataframe(pd.DataFrame(st.session_state.db_itk))
