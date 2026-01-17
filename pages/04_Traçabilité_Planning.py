@@ -664,81 +664,108 @@ with tab_phyto:
             st.info("Aucun historique.")
 
 # =========================================================
-# ONGLET 4 : TABLEAU DE BORD & AVANCEMENT (REFONDU)
+# ONGLET 4 : TABLEAU DE BORD INTERACTIF (MODIFICATION DIRECTE)
 # =========================================================
 with tab_stats:
-    st.subheader("📊 Tableau de Bord Global")
+    st.subheader("📊 Tableau de Bord & Pilotage Rapide")
     
     df_all = pd.DataFrame(st.session_state.db_itk)
     
     if not df_all.empty:
         # --- PRÉPARATION DES DONNÉES ---
-        # On s'assure que les dates sont au format datetime pour les calculs
         df_all["start"] = pd.to_datetime(df_all["start"])
         df_all["end"] = pd.to_datetime(df_all["end"])
         
-        # Calcul de l'avancement "Temps Réel" pour les tâches "En cours"
+        # Calcul Avancement (Barres)
         today = pd.Timestamp(date.today())
-        
         def calc_progress(row):
             if row["statut"] == "Fini": return 100
-            if row["statut"] == "Planifié" or row["statut"] == "A faire": return 0
-            # Si "En cours", on calcule le ratio temps écoulé
+            if row["statut"] in ["Planifié", "A faire"]: return 0
             total_days = (row["end"] - row["start"]).days + 1
             days_passed = (today - row["start"]).days + 1
             if total_days <= 0: return 0
-            prog = (days_passed / total_days) * 100
-            return max(0, min(100, prog)) # Borner entre 0 et 100
+            return max(0, min(100, (days_passed / total_days) * 100))
 
         df_all["progress"] = df_all.apply(calc_progress, axis=1)
 
         # ---------------------------------------------------------
-        # 1. LA MATRICE D'AVANCEMENT (Vue Hélicoptère)
+        # 1. MATRICE ÉDITABLE (Le Cœur du Système)
         # ---------------------------------------------------------
-        st.markdown("#### 🧱 Matrice d'Avancement des Parcelles")
-        st.caption("🟢 Fini | 🟡 En cours | 🔵 Planifié | ⚪ Rien")
+        st.markdown("#### ⚡ Mise à jour rapide des statuts")
+        st.caption("Changez un statut dans le tableau, cela mettra à jour la base de données immédiatement.")
 
-        # On filtre pour ne garder que les tâches principales (pas les 50 phytos)
-        # Tu peux ajuster cette liste ou l'enlever pour tout voir
+        # Liste des tâches principales à afficher en colonnes
         main_tasks = ["Taille & Tirage", "Enherbement", "Prétaille", "Epandage Compost", "Sécaille/Attachage", "Broyage du bois", "Epandage Engrais", "Désherbage"]
+        
+        # On filtre les données
         df_matrix = df_all[df_all["tache"].isin(main_tasks)].copy()
         
-        # Si la liste est vide (noms différents), on prend tout sauf Phyto
-        if df_matrix.empty:
-            df_matrix = df_all[df_all["categorie"] != "Traitements"].copy()
-
-        # On ajoute le nom de la parcelle pour l'affichage
+        # On ajoute le NOM de la parcelle (plus lisible que l'ID P_00)
+        # On crée aussi un dictionnaire inverse pour retrouver l'ID plus tard
+        name_to_id = {info['nom']: code for code, info in DATA_PARCELLES.items()}
         df_matrix["Nom_Parcelle"] = df_matrix["parcelle_id"].apply(lambda x: DATA_PARCELLES.get(x, {}).get("nom", x))
 
-        # PIVOT : On transforme la liste en grille
-        # Rows = Parcelle, Cols = Tache, Value = Statut
+        # PIVOT : On crée la grille (Lignes=Parcelles, Cols=Tâches)
         try:
-            pivot_status = df_matrix.pivot(index="Nom_Parcelle", columns="tache", values="statut")
+            pivot_df = df_matrix.pivot(index="Nom_Parcelle", columns="tache", values="statut")
             
-            # Fonction de coloriage pour le tableau
-            def color_status(val):
-                color = 'white'
-                if val == 'Fini': color = '#d4edda' # Vert clair
-                elif val == 'En cours': color = '#fff3cd' # Jaune clair
-                elif val == 'Planifié': color = '#cce5ff' # Bleu clair
-                elif val == 'A faire': color = '#f8d7da' # Rouge clair
-                return f'background-color: {color}; color: black; border: 1px solid #dee2e6'
+            # CONFIGURATION DES COLONNES (Listes déroulantes partout !)
+            column_config = {}
+            for col in pivot_df.columns:
+                column_config[col] = st.column_config.SelectboxColumn(
+                    col,
+                    options=["Planifié", "A faire", "En cours", "Fini"],
+                    required=True,
+                    width="medium"
+                )
 
-            st.dataframe(pivot_status.style.applymap(color_status), use_container_width=True, height=400)
+            # AFFICHAGE DE L'ÉDITEUR
+            edited_df = st.data_editor(
+                pivot_df,
+                column_config=column_config,
+                use_container_width=True,
+                height=400,
+                key="editor_stats"
+            )
+
+            # --- LOGIQUE DE SAUVEGARDE AUTOMATIQUE ---
+            # Si le tableau édité est différent du tableau d'origine, on met à jour la base
+            if not edited_df.equals(pivot_df):
+                # On parcourt le tableau édité pour trouver les changements
+                # Note : C'est une méthode simple. Pour de très gros volumes, on optimiserait.
+                for nom_parcelle, row in edited_df.iterrows():
+                    # On retrouve l'ID de la parcelle (ex: P_00) grâce au nom
+                    pid = name_to_id.get(nom_parcelle)
+                    if pid:
+                        for tache_col in edited_df.columns:
+                            new_statut = row[tache_col]
+                            
+                            # On cherche la ligne correspondante dans la base de données principale
+                            # et on met à jour si ça a changé
+                            for item in st.session_state.db_itk:
+                                if item["parcelle_id"] == pid and item["tache"] == tache_col:
+                                    if item["statut"] != new_statut:
+                                        item["statut"] = new_statut
+                                        # Petit bonus : Si on met "Fini", on peut mettre la progression à 100% visuellement
+                                        # (bien que ce soit recalculé au prochain tour)
+                
+                # Une fois la boucle finie, on sauvegarde et on recharge
+                save_data()
+                st.rerun()
+
         except Exception as e:
-            st.warning("Pas assez de données pour générer la matrice.")
+            st.warning(f"Données insuffisantes pour la matrice : {e}")
 
         st.divider()
 
         # ---------------------------------------------------------
-        # 2. ZOOM SUR CE QUI EST "EN COURS" (Barres de progression)
+        # 2. SUIVI DES CHANTIERS EN COURS
         # ---------------------------------------------------------
-        st.markdown("#### ⏳ Chantier en cours (Temps écoulé)")
+        st.markdown("#### ⏳ Chantiers en cours (Temps écoulé)")
         
         df_running = df_all[df_all["statut"] == "En cours"].copy()
         
         if not df_running.empty:
-            # On ajoute le nom
             df_running["Nom_Parcelle"] = df_running["parcelle_id"].apply(lambda x: DATA_PARCELLES.get(x, {}).get("nom", x))
             
             for index, row in df_running.iterrows():
@@ -746,31 +773,27 @@ with tab_stats:
                 with col_txt:
                     st.text(f"{row['Nom_Parcelle']} : {row['tache']}")
                 with col_bar:
-                    # Affichage d'une barre de progression native Streamlit
                     st.progress(int(row['progress']))
-                    st.caption(f"📅 Fin prévue le {row['end'].strftime('%d/%m')} ({int(row['progress'])}% du temps écoulé)")
+                    st.caption(f"📅 Fin prévue : {row['end'].strftime('%d/%m')} ({int(row['progress'])}%)")
         else:
-            st.info("Aucun chantier marqué 'En cours' actuellement.")
+            st.info("Rien en cours.")
 
         st.divider()
 
         # ---------------------------------------------------------
-        # 3. STATS GLOBALES (CAMEMBERTS)
+        # 3. STATS GLOBALES
         # ---------------------------------------------------------
         c1, c2 = st.columns(2)
-        with c1:
-            st.markdown("**Répartition par type de travail**")
-            fig_pie = px.pie(df_all, names="categorie", hole=0.4)
-            st.plotly_chart(fig_pie, use_container_width=True)
+        with c1: 
+            st.caption("Répartition Travaux")
+            st.plotly_chart(px.pie(df_all, names="categorie", hole=0.4), use_container_width=True)
         with c2:
-            st.markdown("**État d'avancement global**")
-            fig_statut = px.pie(df_all, names="statut", color="statut", 
-                                color_discrete_map={"Fini":"green", "En cours":"orange", "A faire":"red", "Planifié":"blue"})
-            st.plotly_chart(fig_statut, use_container_width=True)
+            st.caption("Avancement Global")
+            st.plotly_chart(px.pie(df_all, names="statut", color="statut", color_discrete_map={"Fini":"green", "En cours":"orange", "A faire":"red", "Planifié":"blue"}), use_container_width=True)
 
     else:
-        st.info("Aucune donnée pour les statistiques.")
-        
+        st.info("Aucune donnée.")
+
 # ONGLET 5 : DATA
 with tab_data:
     st.dataframe(pd.DataFrame(st.session_state.db_itk))
