@@ -597,7 +597,7 @@ with tab_plan:
                     st.error("Veuillez sélectionner au moins une parcelle.")
 
 # =========================================================
-# ONGLET 3 : TRAITEMENTS PHYTO & IFT (CORRIGÉ V3 - SAISIE & DATA FIXE)
+# ONGLET 3 : TRAITEMENTS PHYTO (SAISIE CLAVIER CORRIGÉE)
 # =========================================================
 with tab_phyto:
     st.subheader("🧪 Traitements & Calcul IFT")
@@ -655,9 +655,13 @@ with tab_phyto:
 
             st.write("---")
             d_app = st.date_input("Date", date.today())
-            n_app = st.text_input("Nom du Traitement", "T... Mildiou/Oïdium")
-            # Saisie clavier libre pour le volume
-            vol_ha_cible = st.number_input("Volume Bouillie (L/ha)", value=150.0, step=10.0, format="%.0f") 
+            
+            # CHAMP NOM : Saisie clavier standard
+            n_app = st.text_input("Nom du Traitement", value="T... Mildiou", key="nom_traitement_input")
+            
+            # CHAMP VOLUME : step=0.0 enlève les boutons +/-
+            vol_ha_cible = st.number_input("Volume Bouillie (L/ha)", value=150.0, step=0.0, format="%.0f") 
+            
             st.caption(f"💧 Eau requise : **{surf_tot * vol_ha_cible:.0f} Litres**")
 
     with c_right:
@@ -673,53 +677,45 @@ with tab_phyto:
                     # Choix Produit
                     choix_prod = st.selectbox("Produit", list(DATA_PRODUITS.keys()) + ["✍️ Autre / Nouveau..."])
                     
-                    # --- LOGIQUE SÉPARÉE POUR PROTÉGER LES DONNÉES ---
                     # Variables par défaut
                     nom_final = choix_prod
-                    dose_ref_val = 1.0 # Valeur par défaut pour éviter division par 0
+                    dose_ref_val = 1.0 
                     unite_val = "kg/L"
                     
                     if choix_prod == "✍️ Autre / Nouveau...":
-                        # CAS NOUVEAU : On affiche des champs de saisie
-                        nom_final = st.text_input("Nom du produit (Ex: Cuivre...)", value="Nouveau Produit")
+                        # CAS NOUVEAU
+                        nom_final = st.text_input("Nom du produit", value="Nouveau Produit")
+                        # step=0.0 ici aussi pour saisie clavier dose ref
                         dose_ref_val = st.number_input(
                             "Dose Homologuée (Référence IFT=1)", 
-                            min_value=0.01, value=1.0, step=0.1, format="%.2f",
-                            help="Saisissez la dose officielle pour le calcul IFT"
+                            min_value=0.01, value=1.0, step=0.0, format="%.2f"
                         )
                         unite_val = st.text_input("Unité", "L/ha")
                     else:
-                        # CAS EXISTANT : On lit SEULEMENT (Lecture seule)
-                        # On ne crée PAS de champ number_input ici pour éviter d'écraser la valeur
+                        # CAS EXISTANT (Lecture seule)
                         infos = DATA_PRODUITS[choix_prod]
-                        dose_ref_val = float(infos['dose_ref']) # On force le float pour être sûr
+                        dose_ref_val = float(infos['dose_ref']) 
                         unite_val = infos['unite']
-                        
-                        # Affichage propre et fixe
                         st.markdown(f"**Dose Réf (IFT=1) :** `{dose_ref_val} {unite_val}`")
-                        st.caption("🔒 Donnée catalogue (fixe)")
 
                 with c_p2:
-                    # --- CORRECTION SAISIE CLAVIER ---
-                    # step=0.01 et format="%.2f" débloquent la saisie fine au clavier
+                    # --- CORRECTION DOSE APP ---
+                    # step=0.0 permet de taper librement sans boutons +/-
                     dose_app = st.number_input(
                         f"Votre Dose / ha", 
                         min_value=0.0, 
                         value=0.0, 
-                        step=0.01, 
+                        step=0.0, 
                         format="%.2f"
                     )
                     
-                    # CALCUL IFT TEMPS RÉEL
+                    # CALCUL IFT VISUEL
                     ift_calc = 0.0
                     if dose_ref_val > 0 and dose_app > 0:
                         ift_calc = dose_app / dose_ref_val
                     
                     if ift_calc > 0:
-                        if ift_calc > 1.2:
-                            st.warning(f"⚠️ IFT : {ift_calc:.2f}")
-                        else:
-                            st.success(f"✅ IFT : {ift_calc:.2f}")
+                        st.caption(f"IFT : {ift_calc:.2f}")
 
                 # Bouton Ajout
                 ajout = st.form_submit_button("➕ Ajouter au mélange")
@@ -728,7 +724,6 @@ with tab_phyto:
                     if dose_app > 0:
                         qte_cuve = dose_app * surf_tot
                         
-                        # On ajoute au panier sans toucher au dictionnaire DATA_PRODUITS
                         st.session_state.current_mix.append({
                             "produit": nom_final,
                             "dose_app": dose_app,
@@ -741,16 +736,15 @@ with tab_phyto:
                     else:
                         st.error("La dose doit être supérieure à 0.")
 
-            # --- 3. RÉCAPITULATIF (SOMME DES IFT) ---
+            # --- 3. RÉCAPITULATIF ---
             if st.session_state.current_mix:
                 st.markdown("##### 📋 Contenu de la Cuve")
                 
                 df_mix = pd.DataFrame(st.session_state.current_mix)
                 
-                # Calcul de l'IFT TOTAL (Somme des IFT de chaque ligne)
+                # Somme IFT
                 ift_total_traitement = df_mix["ift"].sum()
                 
-                # Tableau Utilisateur
                 df_display = df_mix.rename(columns={
                     "produit": "Produit",
                     "dose_app": "Dose/ha",
@@ -764,7 +758,6 @@ with tab_phyto:
                     hide_index=True
                 )
                 
-                # Affichage du score IFT TOTAL en gros
                 st.metric("IFT TOTAL DU TRAITEMENT", f"{ift_total_traitement:.2f}")
                 
                 # Validation
@@ -773,7 +766,6 @@ with tab_phyto:
                     if st.button("✅ ENREGISTRER TRAITEMENT", type="primary"):
                         ts = datetime.now().timestamp()
                         
-                        # Création du texte descriptif
                         desc_parts = [f"{row['produit']} ({row['dose_app']}{row['unite']})" for i, row in df_mix.iterrows()]
                         desc_full = f"Vol:{vol_ha_cible}L | " + " + ".join(desc_parts)
                         
@@ -787,14 +779,14 @@ with tab_phyto:
                                 "end": d_app,
                                 "statut": "Fini", 
                                 "color_hex": "#8e44ad", 
-                                "ift_value": ift_total_traitement, # Stockage du vrai total
+                                "ift_value": ift_total_traitement,
                                 "materiel": desc_full, 
                                 "jours_estimes": 0.5
                             })
                         
                         save_data()
                         st.session_state.current_mix = []
-                        st.success(f"Enregistré ! IFT Total ajouté : {ift_total_traitement:.2f}")
+                        st.success(f"Enregistré ! IFT Total : {ift_total_traitement:.2f}")
                         st.rerun()
                 
                 with c_reset:
@@ -803,9 +795,9 @@ with tab_phyto:
                         st.rerun()
 
         else:
-            st.info("👈 Sélectionnez des parcelles pour commencer.")
+            st.info("👈 Sélectionnez des parcelles.")
             
-    # Bas de page : Modif suppression (inchangé)
+    # Bas de page : Modif suppression
     with st.expander("🛠️ Modifier / Supprimer un ancien traitement"):
         all_phyto_list = [t for t in st.session_state.db_itk if t.get("categorie") == "Traitements"]
         if all_phyto_list:
@@ -820,7 +812,7 @@ with tab_phyto:
                 idx_phy = next((i for i, item in enumerate(st.session_state.db_itk) if item["id"] == sel_edit_phy["id"]), -1)
                 with st.form("edit_phyto_form"):
                     new_n = st.text_input("Nom", sel_edit_phy['tache'])
-                    new_ift = st.number_input("IFT", value=float(sel_edit_phy.get('ift_value', 0.0)))
+                    new_ift = st.number_input("IFT", value=float(sel_edit_phy.get('ift_value', 0.0)), step=0.0, format="%.2f")
                     del_phy = st.checkbox("Supprimer définitivement ?")
                     if st.form_submit_button("Mettre à jour"):
                         if del_phy:
