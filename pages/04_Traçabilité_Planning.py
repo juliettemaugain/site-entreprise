@@ -474,7 +474,35 @@ with tab_view:
                 selected_task = st.selectbox("Choisir tâche (hors phyto)", task_options, format_func=format_func)
                 
                 if selected_task:
-                    real_index = next((i for i, item in enumerate(st
+                    real_index = next((i for i, item in enumerate(st.session_state.db_itk) if item["id"] == selected_task["id"]), -1)
+                    
+                    with st.form(key="edit_std"):
+                        c1, c2 = st.columns(2)
+                        with c1:
+                            ns = st.selectbox("Statut", ["Planifié", "A faire", "En cours", "Fini"], index=["Planifié", "A faire", "En cours", "Fini"].index(selected_task["statut"]))
+                            nc = st.color_picker("Couleur", selected_task["color_hex"])
+                        with c2:
+                            d1 = st.date_input("Début", selected_task["start"])
+                            d2 = st.date_input("Fin", selected_task["end"])
+                        del_chk = st.checkbox("Supprimer cette tâche ?")
+                        
+                        if st.form_submit_button("Enregistrer les modifications"):
+                            if del_chk:
+                                del st.session_state.db_itk[real_index]
+                                st.success("Tâche supprimée !")
+                            else:
+                                st.session_state.db_itk[real_index].update({
+                                    "statut": ns, "color_hex": nc, "start": d1, "end": d2
+                                })
+                                st.success("Mise à jour effectuée !")
+                            save_data()
+                            st.rerun()
+            else:
+                st.info("Aucune tâche standard modifiable.")
+        else:
+            st.info("Aucune intervention planifiée sur cette parcelle.")
+    else:
+        st.info("👆 Cliquez sur une parcelle sur la carte pour voir le détail.")
 
 ## =========================================================
 # ONGLET 2 : PLANIF GROUPÉE (AMÉLIORÉ : TRI + RECHERCHE + TOUT SÉLECTIONNER)
