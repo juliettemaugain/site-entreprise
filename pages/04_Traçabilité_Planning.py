@@ -596,135 +596,161 @@ with tab_plan:
                 else:
                     st.error("Veuillez sélectionner au moins une parcelle.")
 
-## =========================================================
-# ONGLET 3 : TRAITEMENTS PHYTO (Calculateur de Cuve Avancé)
+# =========================================================
+# ONGLET 3 : TRAITEMENTS PHYTO & IFT (VERSION PRO)
 # =========================================================
 with tab_phyto:
-    st.subheader("🧪 Traitements & Calcul de Bouillie")
+    st.subheader("🧪 Traitements & Calcul IFT")
     
-    # --- 1. VISUALISATION RAPIDE (Gantt) ---
-    df_all_phyto = pd.DataFrame(st.session_state.db_itk)
-    if not df_all_phyto.empty and "categorie" in df_all_phyto.columns:
-        df_phyto_only = df_all_phyto[df_all_phyto["categorie"] == "Traitements"].copy()
-        if not df_phyto_only.empty:
-            df_phyto_only["start"] = pd.to_datetime(df_phyto_only["start"])
-            df_phyto_only["end"] = pd.to_datetime(df_phyto_only["end"])
-            df_phyto_only["Parcelle"] = df_phyto_only["parcelle_id"].apply(lambda x: DATA_PARCELLES.get(x, {}).get("nom", x))
-            
-            with st.expander("Voir le calendrier des traitements passés", expanded=False):
-                fig_p = px.timeline(df_phyto_only, x_start="start", x_end="end", y="Parcelle", color="tache", text="tache", height=300)
-                fig_p.update_layout(xaxis=dict(title="Date", tickformat="%d/%m"), yaxis=dict(title=""))
-                fig_p.update_yaxes(autorange="reversed")
-                st.plotly_chart(fig_p, use_container_width=True)
+    # --- 1. HISTORIQUE RAPIDE ---
+    with st.expander("Voir l'historique des traitements", expanded=False):
+        df_all_phyto = pd.DataFrame(st.session_state.db_itk)
+        if not df_all_phyto.empty and "categorie" in df_all_phyto.columns:
+            df_phyto = df_all_phyto[df_all_phyto["categorie"] == "Traitements"].copy()
+            if not df_phyto.empty:
+                df_phyto["start"] = pd.to_datetime(df_phyto["start"])
+                st.dataframe(df_phyto[["start", "tache", "materiel", "ift_value"]].sort_values("start", ascending=False), use_container_width=True)
+            else:
+                st.info("Aucun traitement.")
 
     st.divider()
 
-    # --- 2. LE CALCULATEUR DE BOUILLIE ---
+    # --- 2. LE CALCULATEUR DE BOUILLIE ET IFT ---
     c_left, c_right = st.columns([1, 1.5])
 
-    # A. Initialisation du "Panier" de produits (Session State)
+    # Initialisation du Panier
     if "current_mix" not in st.session_state:
         st.session_state.current_mix = []
 
     with c_left:
         st.markdown("#### 1. Configuration du Chantier")
         with st.container(border=True):
-            # Sélection des parcelles
-            sel_parc = st.multiselect("Parcelles à traiter", options=DATA_PARCELLES.keys(), format_func=lambda x: DATA_PARCELLES[x]['nom'])
+            # --- AMÉLIORATION : TRI & SÉLECTION COMME ONGLET 2 ---
+            sorted_keys = sorted(DATA_PARCELLES.keys(), key=lambda x: DATA_PARCELLES[x]['nom'])
+            
+            col_check, col_info = st.columns([1, 1])
+            with col_check:
+                all_checked = st.checkbox("✅ Tout sélectionner", key="check_phyto")
+            
+            if all_checked: default_sel = sorted_keys
+            else: default_sel = []
+
+            sel_parc = st.multiselect(
+                "Parcelles à traiter", 
+                options=sorted_keys, 
+                default=default_sel,
+                format_func=lambda x: DATA_PARCELLES[x]['nom'],
+                key="multi_phyto"
+            )
             
             # Calcul Surface
             surf_tot = sum([DATA_PARCELLES[p]['surface'] for p in sel_parc])
             
             if surf_tot > 0:
-                st.info(f"📐 Surface Totale : **{surf_tot:.2f} ha**")
+                st.success(f"📐 Surface Totale : **{surf_tot:.2f} ha**")
             else:
-                st.warning("Sélectionnez des parcelles pour commencer.")
+                st.warning("Sélectionnez des parcelles.")
 
             st.write("---")
             d_app = st.date_input("Date", date.today())
             n_app = st.text_input("Nom du Traitement", "T... Mildiou/Oïdium")
-            
-            # Info Volume (Facultatif, pour info chauffeur)
             vol_ha_cible = st.number_input("Volume Bouillie (L/ha)", 50, 1000, 150)
-            st.caption(f"💧 Volume total d'eau : **{surf_tot * vol_ha_cible:.0f} Litres**")
+            st.caption(f"💧 Eau requise : **{surf_tot * vol_ha_cible:.0f} Litres**")
 
     with c_right:
-        st.markdown("#### 2. Composition de la Cuve (Produit par Produit)")
+        st.markdown("#### 2. Composition & IFT")
         
         if surf_tot > 0:
             with st.form("add_product_form", clear_on_submit=True):
-                c_p1, c_p2 = st.columns([2, 1])
+                st.caption("Ajoutez les produits un par un pour calculer l'IFT.")
+                c_p1, c_p2 = st.columns([1.5, 1])
                 
                 with c_p1:
-                    # Liste déroulante avec option "Autre"
-                    choix_prod = st.selectbox("Choisir Produit", list(DATA_PRODUITS.keys()) + ["✍️ Autre / Nouveau Produit..."])
+                    # Choix Produit
+                    choix_prod = st.selectbox("Produit", list(DATA_PRODUITS.keys()) + ["✍️ Autre / Nouveau..."])
                     
-                    # Si "Autre", on affiche un champ texte
-                    nom_final_prod = choix_prod
-                    unite_ref = "kg/L" # Unité par défaut
+                    # LOGIQUE PRODUIT (Existant vs Nouveau)
+                    nom_final = choix_prod
+                    dose_ref_val = 0.0
+                    unite_val = "kg/L"
                     
-                    if choix_prod == "✍️ Autre / Nouveau Produit...":
-                        nom_custom = st.text_input("Nom du nouveau produit")
-                        if nom_custom:
-                            nom_final_prod = nom_custom
+                    if choix_prod == "✍️ Autre / Nouveau...":
+                        # Champs pour nouveau produit
+                        nom_final = st.text_input("Nom du produit (Ex: Cuivre...)", value="Nouveau Produit")
+                        dose_ref_val = st.number_input("Dose Homologuée (Référence) pour 1 IFT", min_value=0.01, value=1.0, step=0.1, help="La dose officielle qui correspond à un IFT de 1")
+                        unite_val = st.text_input("Unité", "L/ha")
                     else:
-                        # On récupère l'unité du produit connu
-                        unite_ref = DATA_PRODUITS[choix_prod]['unite']
+                        # Produit existant -> On prend les infos du dico
+                        infos = DATA_PRODUITS[choix_prod]
+                        dose_ref_val = infos['dose_ref']
+                        unite_val = infos['unite']
+                        st.info(f"ℹ️ Dose Réf (IFT=1) : **{dose_ref_val} {unite_val}**")
 
                 with c_p2:
-                    dose_ha = st.number_input(f"Dose/ha ({unite_ref})", min_value=0.0, value=0.0, step=0.1, format="%.2f")
+                    # Saisie de la dose réelle
+                    dose_app = st.number_input(f"Votre Dose / ha", min_value=0.0, value=0.0, step=0.05)
+                    
+                    # CALCUL IFT EN DIRECT
+                    ift_calc = 0.0
+                    if dose_ref_val > 0:
+                        ift_calc = dose_app / dose_ref_val
+                    
+                    # Affichage visuel de l'IFT
+                    if ift_calc > 1.0:
+                        st.warning(f"⚠️ IFT : {ift_calc:.2f}")
+                    else:
+                        st.success(f"✅ IFT : {ift_calc:.2f}")
 
-                # Bouton pour ajouter dans la liste temporaire
+                # Bouton Ajout
                 ajout = st.form_submit_button("➕ Ajouter au mélange")
                 
                 if ajout:
-                    if dose_ha > 0:
-                        # Calcul de la quantité totale pour la cuve
-                        qte_cuve = dose_ha * surf_tot
-                        
-                        # Ajout au panier
+                    if dose_app > 0:
+                        qte_cuve = dose_app * surf_tot
                         st.session_state.current_mix.append({
-                            "produit": nom_final_prod,
-                            "dose_ha": dose_ha,
-                            "qte_totale": qte_cuve,
-                            "unite": unite_ref
+                            "produit": nom_final,
+                            "dose_app": dose_app,
+                            "dose_ref": dose_ref_val,
+                            "qte_cuve": qte_cuve,
+                            "unite": unite_val,
+                            "ift": ift_calc
                         })
-                        st.rerun() # On recharge pour afficher le tableau mis à jour
+                        st.rerun()
                     else:
-                        st.error("Mettez une dose supérieure à 0.")
+                        st.error("Dose nulle impossible.")
 
-            # --- AFFICHAGE DU RÉCAPITULATIF (LA RECETTE) ---
+            # --- 3. RÉCAPITULATIF (RECETTE + IFT TOTAL) ---
             if st.session_state.current_mix:
-                st.markdown("##### 📋 Recette de la Cuve")
+                st.markdown("##### 📋 Contenu de la Cuve")
                 
-                # On transforme la liste en Joli Tableau
                 df_mix = pd.DataFrame(st.session_state.current_mix)
                 
-                # On renomme pour l'affichage
-                df_mix_display = df_mix.rename(columns={
-                    "produit": "Produit", 
-                    "dose_ha": "Dose / ha", 
-                    "qte_totale": "QUANTITÉ À METTRE",
-                    "unite": "Unité"
+                # On calcule le TOTAL IFT
+                ift_total_traitement = df_mix["ift"].sum()
+                
+                # Tableau propre pour l'utilisateur
+                df_display = df_mix.rename(columns={
+                    "produit": "Produit",
+                    "dose_app": "Dose/ha",
+                    "qte_cuve": "QTÉ CUVE",
+                    "ift": "IFT"
                 })
+                st.dataframe(df_display[["Produit", "Dose/ha", "QTÉ CUVE", "IFT"]], use_container_width=True, hide_index=True)
                 
-                # Affichage du tableau
-                st.dataframe(df_mix_display[["Produit", "Dose / ha", "Unité", "QUANTITÉ À METTRE"]], use_container_width=True, hide_index=True)
+                # Affichage du score IFT TOTAL
+                st.metric("IFT TOTAL DU TRAITEMENT", f"{ift_total_traitement:.2f}")
                 
-                # Boutons de Validation ou Reset
+                # --- VALIDATION ---
                 c_val, c_reset = st.columns([3, 1])
-                
                 with c_val:
-                    if st.button("✅ VALIDER ET ENREGISTRER LE TRAITEMENT", type="primary"):
+                    if st.button("✅ ENREGISTRER TRAITEMENT", type="primary"):
                         ts = datetime.now().timestamp()
                         
-                        # On crée une description textuelle de tout le mélange pour l'historique
-                        desc_melange = " + ".join([f"{row['produit']} ({row['dose_ha']} {row['unite']}/ha)" for i, row in df_mix.iterrows()])
-                        desc_complete = f"Vol: {vol_ha_cible}L/ha | {desc_melange}"
+                        # Création du texte descriptif
+                        desc_parts = [f"{row['produit']} ({row['dose_app']}{row['unite']})" for i, row in df_mix.iterrows()]
+                        desc_full = f"Vol:{vol_ha_cible}L | " + " + ".join(desc_parts)
                         
-                        # Calcul IFT (Sommaire si possible, sinon 0)
-                        ift_total_est = 0.0 # À affiner plus tard si besoin
-                        
+                        # Enregistrement pour chaque parcelle
                         for pid in sel_parc:
                             st.session_state.db_itk.append({
                                 "id": f"{pid}_phy_{ts}", 
@@ -735,33 +761,32 @@ with tab_phyto:
                                 "end": d_app,
                                 "statut": "Fini", 
                                 "color_hex": "#8e44ad", 
-                                "ift_value": ift_total_est,
-                                "materiel": desc_complete, 
+                                "ift_value": ift_total_traitement, # On stocke le vrai IFT calculé !
+                                "materiel": desc_full, 
                                 "jours_estimes": 0.5
                             })
                         
                         save_data()
-                        st.session_state.current_mix = [] # On vide le panier
-                        st.success("Traitement enregistré !")
+                        st.session_state.current_mix = []
+                        st.success(f"Enregistré ! IFT ajouté : {ift_total_traitement:.2f}")
                         st.rerun()
                 
                 with c_reset:
                     if st.button("🗑️ Vider"):
                         st.session_state.current_mix = []
                         st.rerun()
-        else:
-            st.info("👈 Sélectionnez d'abord vos parcelles à gauche.")
 
-    st.divider()
-    
-    # 3. SUPPRESSION / MODIFICATION (Bas de page)
+        else:
+            st.info("👈 Sélectionnez des parcelles pour commencer.")
+            
+    # Bas de page : Modif suppression (inchangé mais inclus pour complétude)
     with st.expander("🛠️ Modifier / Supprimer un ancien traitement"):
         all_phyto_list = [t for t in st.session_state.db_itk if t.get("categorie") == "Traitements"]
         if all_phyto_list:
             all_phyto_list.sort(key=lambda x: x['start'], reverse=True)
             def fmt_p(x):
                 pname = DATA_PARCELLES.get(x['parcelle_id'], {}).get('nom', '?')
-                return f"{x['start']} | {pname} | {x['tache']}"
+                return f"{x['start']} | {pname} | {x['tache']} (IFT: {x.get('ift_value', 0):.2f})"
 
             sel_edit_phy = st.selectbox("Choisir un traitement", all_phyto_list, format_func=fmt_p)
             
@@ -769,19 +794,17 @@ with tab_phyto:
                 idx_phy = next((i for i, item in enumerate(st.session_state.db_itk) if item["id"] == sel_edit_phy["id"]), -1)
                 with st.form("edit_phyto_form"):
                     new_n = st.text_input("Nom", sel_edit_phy['tache'])
+                    new_ift = st.number_input("IFT", value=float(sel_edit_phy.get('ift_value', 0.0)))
                     del_phy = st.checkbox("Supprimer définitivement ?")
                     if st.form_submit_button("Mettre à jour"):
                         if del_phy:
                             del st.session_state.db_itk[idx_phy]
                             st.success("Supprimé !")
                         else:
-                            st.session_state.db_itk[idx_phy].update({"tache": new_n})
+                            st.session_state.db_itk[idx_phy].update({"tache": new_n, "ift_value": new_ift})
                             st.success("Modifié !")
                         save_data()
                         st.rerun()
-        else:
-            st.info("Aucun historique.")
-            
 # =========================================================
 # ONGLET 4 : TABLEAU DE BORD INTERACTIF (MODIFICATION DIRECTE)
 # =========================================================
