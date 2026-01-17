@@ -378,31 +378,37 @@ tab_view, tab_plan, tab_phyto, tab_stats, tab_data = st.tabs(["🔍 Détail Parc
 # =========================================================
 # ONGLET 1 : DÉTAIL PARCELLE (Modif Standard)
 # =========================================================
-with tab_view:
-    if selected_code_map:
-        parcelle = DATA_PARCELLES[selected_code_map]
-        st.markdown(f"### 🍇 {parcelle['nom']} <span style='font-size:0.7em; color:gray'>({parcelle['cepage']} - {parcelle['surface']} ha)</span>", unsafe_allow_html=True)
-        
-        df_global = pd.DataFrame(st.session_state.db_itk)
-        for col in ["color_hex", "categorie", "materiel", "cadence", "jours_estimes", "statut", "ift_value"]:
-            if col not in df_global.columns: df_global[col] = None
-        df_global = df_global.fillna(value={"color_hex":"#3498db", "ift_value":0.0})
-        df_global["start"] = pd.to_datetime(df_global["start"])
-        df_global["end"] = pd.to_datetime(df_global["end"])
-        
-        df_filtered = df_global[df_global["parcelle_id"] == selected_code_map].copy()
-
-        if not df_filtered.empty:
+if not df_filtered.empty:
             color_map_gantt = {row["tache"]: row["color_hex"] for index, row in df_filtered.iterrows()}
+            
+            # 1. Création du graphique de base
             fig = px.timeline(
-                df_filtered, x_start="start", x_end="end", y="tache", color="tache",
+                df_filtered, 
+                x_start="start", x_end="end", 
+                y="tache", 
+                color="tache",
                 color_discrete_map=color_map_gantt,
-                hover_data=["statut", "categorie", "jours_estimes", "ift_value"], title="Planning"
+                title="Planning des travaux",
+                # On passe les données qu'on veut afficher en "données cachées" (custom_data)
+                custom_data=["start", "end", "jours_estimes", "statut"]
             )
+            
+            # 2. Personnalisation totale de l'infobulle (Hover)
+            fig.update_traces(
+                hovertemplate=(
+                    "<b style='font-size: 16px'>%{y}</b><br>" +  # Le nom de la tâche en gros
+                    "📅 Du %{customdata[0]|%d/%m/%Y} au %{customdata[1]|%d/%m/%Y}<br>" + # Les dates formatées
+                    "⏳ Durée prévue : <b>%{customdata[2]:.1f} jours</b><br>" + # Jours en gras
+                    "📌 Statut : %{customdata[3]}" + 
+                    "<extra></extra>" # Supprime la petite boîte inutile à côté
+                )
+            )
+
             fig.update_yaxes(autorange="reversed", title="")
             st.plotly_chart(fig, use_container_width=True)
             
             st.divider()
+            # ... (La suite du code pour la modification reste inchangée)
             st.caption("Pour modifier/supprimer une tâche standard :")
             
             # --- MODIFICATION STANDARD ---
