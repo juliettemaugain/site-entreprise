@@ -376,42 +376,37 @@ st.divider()
 tab_view, tab_plan, tab_phyto, tab_stats, tab_data = st.tabs(["🔍 Détail Parcelle", "🚜 Planif Groupée", "🧪 Traitements Phyto", "📊 Statistiques", "🗃️ Data"])
 
 # =========================================================
-# ONGLET 1 : DÉTAIL PARCELLE (Modif Standard)
+# ONGLET 1 : DÉTAIL PARCELLE (AVEC BARRE "AUJOURD'HUI")
 # =========================================================
 with tab_view:
     if selected_code_map:
-        # 1. EN-TÊTE DE LA PARCELLE
+        # 1. EN-TÊTE
         parcelle = DATA_PARCELLES[selected_code_map]
         st.markdown(f"### 🍇 {parcelle['nom']} <span style='font-size:0.7em; color:gray'>({parcelle['cepage']} - {parcelle['surface']} ha)</span>", unsafe_allow_html=True)
         
-        # 2. PRÉPARATION DES DONNÉES
+        # 2. DONNÉES
         df_global = pd.DataFrame(st.session_state.db_itk)
         
-        # Sécurisation des colonnes
-        for col in ["color_hex", "categorie", "materiel", "cadence", "statut", "ift_value"]:
+        # Sécurisation
+        for col in ["color_hex", "categorie", "materiel", "cadence", "jours_estimes", "statut", "ift_value"]:
             if col not in df_global.columns: df_global[col] = None
         
         df_global = df_global.fillna(value={"color_hex":"#3498db", "ift_value":0.0})
-        
-        # --- CORRECTION ET CALCULS ---
-        # On convertit les dates en objets datetime pour faire des maths
         df_global["start"] = pd.to_datetime(df_global["start"])
         df_global["end"] = pd.to_datetime(df_global["end"])
         
-        # Filtrage pour la parcelle
+        # Filtrage
         df_filtered = df_global[df_global["parcelle_id"] == selected_code_map].copy()
 
         if not df_filtered.empty:
-            # A. CALCUL DE LA DURÉE (Fin - Début + 1 jour pour inclure le jour même)
+            # Calculs pour l'affichage
             df_filtered["duree_calc"] = (df_filtered["end"] - df_filtered["start"]).dt.days + 1
-            
-            # B. PRÉ-FORMATAGE DES DATES EN TEXTE (Pour éviter le bug NaN)
             df_filtered["start_txt"] = df_filtered["start"].dt.strftime('%d/%m/%Y')
             df_filtered["end_txt"] = df_filtered["end"].dt.strftime('%d/%m/%Y')
 
             color_map_gantt = {row["tache"]: row["color_hex"] for index, row in df_filtered.iterrows()}
             
-            # 3. CRÉATION DU GRAPHIQUE
+            # 3. GRAPHIQUE GANTT
             fig = px.timeline(
                 df_filtered, 
                 x_start="start", x_end="end", 
@@ -419,72 +414,67 @@ with tab_view:
                 color="tache",
                 color_discrete_map=color_map_gantt,
                 title="Planning des travaux",
-                # On passe nos nouvelles colonnes calculées ici
                 custom_data=["start_txt", "end_txt", "duree_calc", "statut"]
             )
             
-            # MISE EN FORME DE L'INFOBULLE (HOVER)
+            # Infobulle
             fig.update_traces(
                 hovertemplate=(
                     "<b style='font-size: 16px'>%{y}</b><br>" +
-                    "📅 Du %{customdata[0]} au %{customdata[1]}<br>" + # On affiche directement le texte
-                    "⏳ Durée : <b>%{customdata[2]} jours</b><br>" +    # On affiche la durée calculée
-                    "📌 Statut : %{customdata[3]}" + 
-                    "<extra></extra>"
+                    "📅 Du %{customdata[0]} au %{customdata[1]}<br>" +
+                    "⏳ Durée : <b>%{customdata[2]} jours</b><br>" +
+                    "📌 Statut : %{customdata[3]}<extra></extra>"
                 )
             )
 
+            # --- AJOUT DE LA BARRE "AUJOURD'HUI" ---
+            aujourdhui = pd.Timestamp(date.today())
+            
+            # La ligne rouge verticale
+            fig.add_vline(
+                x=aujourdhui, 
+                line_width=2, 
+                line_dash="dash", 
+                line_color="#e74c3c" # Rouge
+            )
+            
+            # Le petit texte "Aujourd'hui" au dessus
+            fig.add_annotation(
+                x=aujourdhui,
+                y=1.05, # Position verticale (un peu au dessus du graph)
+                yref="paper", # Référence par rapport à la zone de traçage
+                text="📍 Aujourd'hui",
+                showarrow=False,
+                font=dict(color="#e74c3c", size=12, family="Arial Black")
+            )
+            # ---------------------------------------
+
             fig.update_yaxes(autorange="reversed", title="")
+            
+            # On définit une plage de temps par défaut pour bien voir la barre
+            # (Du 1er Janvier de l'année en cours au 31 Décembre)
+            fig.update_layout(
+                xaxis=dict(
+                    range=[date(date.today().year, 1, 1), date(date.today().year, 12, 31)]
+                )
+            )
+
             st.plotly_chart(fig, use_container_width=True)
             
             st.divider()
             
-            # 4. ZONE DE MODIFICATION (Uniquement pour les tâches NON Phyto)
+            # 4. MODIFICATION TÂCHES
             st.caption("Pour modifier/supprimer une tâche standard :")
-            
             task_options = df_filtered[df_filtered["categorie"] != "Traitements"].to_dict('records') 
             
             if task_options:
                 def format_func(task):
-                    # On utilise la date déjà formatée
                     return f"{task['tache']} ({task.get('start_txt', '?')})"
 
                 selected_task = st.selectbox("Choisir tâche (hors phyto)", task_options, format_func=format_func)
                 
                 if selected_task:
-                    real_index = next((i for i, item in enumerate(st.session_state.db_itk) if item["id"] == selected_task["id"]), -1)
-                    
-                    with st.form(key="edit_std"):
-                        c1, c2 = st.columns(2)
-                        with c1:
-                            ns = st.selectbox("Statut", ["Planifié", "A faire", "En cours", "Fini"], index=["Planifié", "A faire", "En cours", "Fini"].index(selected_task["statut"]))
-                            nc = st.color_picker("Couleur", selected_task["color_hex"])
-                        with c2:
-                            d1 = st.date_input("Début", selected_task["start"])
-                            d2 = st.date_input("Fin", selected_task["end"])
-                        del_chk = st.checkbox("Supprimer cette tâche ?")
-                        
-                        if st.form_submit_button("Enregistrer les modifications"):
-                            if del_chk:
-                                del st.session_state.db_itk[real_index]
-                                st.success("Tâche supprimée !")
-                            else:
-                                st.session_state.db_itk[real_index].update({
-                                    "statut": ns, 
-                                    "color_hex": nc, 
-                                    "start": d1, 
-                                    "end": d2
-                                })
-                                st.success("Mise à jour effectuée !")
-                            
-                            save_data()
-                            st.rerun()
-            else:
-                st.info("Aucune tâche standard modifiable.")
-        else:
-            st.info("Aucune intervention planifiée sur cette parcelle.")
-    else:
-        st.info("👆 Cliquez sur une parcelle sur la carte pour voir le détail.")
+                    real_index = next((i for i, item in enumerate(st
 
 ## =========================================================
 # ONGLET 2 : PLANIF GROUPÉE (AMÉLIORÉ : TRI + RECHERCHE + TOUT SÉLECTIONNER)
