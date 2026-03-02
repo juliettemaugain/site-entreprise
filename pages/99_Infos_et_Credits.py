@@ -9,7 +9,7 @@ st.markdown("""
 Cet outil a été conçu et développé en interne pour centraliser les outils d'aide à la décision 
 et la documentation technique du **Château Cazal Viel (Domaine Laurent Miquel)**.
 
-La plateforme à été développée et conçu par Juliette Maugain, alternante au Domaine et étudiante en ingénieurie agronome à Montpellier SupAgro.  
+La plateforme à été développée et conçu par Juliette Maugain, alternante au Domaine et étudiante en ingénieurie agronome à Montpellier SupAgro spécialité Viticulture-Oenologie et en DNO. 
 
 ---
 ### Développement 
