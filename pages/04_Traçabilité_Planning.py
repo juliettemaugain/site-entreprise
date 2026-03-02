@@ -211,20 +211,40 @@ if "db_itk" not in st.session_state:
     st.session_state.db_itk = load_data()
 
 
-# --- 3. CARTE ---
-st.subheader("🗺️ Carte du Vignoble")
-
 def generate_map():
     avg_lat = sum([d['lat'] for d in DATA_PARCELLES.values()]) / len(DATA_PARCELLES)
     avg_lon = sum([d['lon'] for d in DATA_PARCELLES.values()]) / len(DATA_PARCELLES)
     
-    m = folium.Map(location=[avg_lat, avg_lon], zoom_start=16)
+    m = folium.Map(location=[avg_lat, avg_lon], zoom_start=15) # J'ai mis zoom_start=15 pour voir un peu plus large
     
     folium.TileLayer(
         tiles='https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}',
         attr='Esri', name='Esri Satellite', overlay=False, control=True
     ).add_to(m)
+
+    # --- 1. AFFICHAGE DES NOMS DE SECTEURS (NOUVEAU) ---
+    # J'ai estimé les centres GPS de tes secteurs basés sur tes parcelles.
+    SECTEURS = {
+        "SECTEUR GAUPHINE": [43.4025, 3.1155],
+        "SECTEUR SAINTE LUCIE": [43.4405, 3.0735],
+        "SECTEUR SAVIGNAC": [43.4180, 3.1230],
+        "SECTEUR ROUTE / BERLAN": [43.4210, 3.0700],
+        "DOMAINE PRINCIPAL": [43.4260, 3.0900] # La zone historique
+    }
+
+    for nom_secteur, coords in SECTEURS.items():
+        folium.map.Marker(
+            coords,
+            icon=folium.DivIcon(
+                icon_size=(300, 40), 
+                icon_anchor=(150, 20),
+                # Un style CSS pensé pour ressembler à un nom de quartier : grand, espacé, un peu transparent
+                html=f"""<div style="font-size: 18px; font-weight: 900; color: rgba(255,255,255,0.6); text-shadow: 2px 2px 10px rgba(0,0,0,0.8); text-align: center; text-transform: uppercase; letter-spacing: 3px; pointer-events: none;">{nom_secteur}</div>"""
+            )
+        ).add_to(m)
+    # --------------------------------------------------
     
+    # --- 2. AFFICHAGE DES PARCELLES ---
     for code, info in DATA_PARCELLES.items():
         if "geometry" in info:
             folium.GeoJson(
@@ -239,7 +259,7 @@ def generate_map():
             [info["lat"], info["lon"]],
             icon=folium.DivIcon(
                 icon_size=(150, 36), icon_anchor=(75, 18),
-                html=f"""<div style="font-size: 11px; font-weight: bold; color: white; text-shadow: 2px 2px 4px #000000; text-align: center; white-space: nowrap; pointer-events: none;">{info['nom']}</div>"""
+                html=f"""<div style="font-size: 11px; font-weight: bold; color: white; text-shadow: 1px 1px 3px #000000; text-align: center; white-space: nowrap; pointer-events: none;">{info['nom']}</div>"""
             )
         ).add_to(m)
         
