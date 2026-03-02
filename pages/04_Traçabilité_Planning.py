@@ -8,19 +8,10 @@ import os
 
 # --- CONFIGURATION DE LA PAGE ---
 st.set_page_config(layout="wide", page_title="Pilotage & Traçabilité", page_icon="🍇")
-st.title("🍇 Pilotage du Vignoble - La Gauphine")
+st.title("🍇 Pilotage du Vignoble")
 
 CSV_FILE = "data_itk.csv"
 
-# --- BOUTON DE RESET (Au cas où) ---
-with st.sidebar:
-    st.header("⚠️ Zone de Danger")
-    if st.button("🔴 RÉINITIALISER TOUTES LES DONNÉES"):
-        if os.path.exists(CSV_FILE):
-            os.remove(CSV_FILE)
-        for key in list(st.session_state.keys()):
-            del st.session_state[key]
-        st.rerun()
 
 # --- 1. DONNÉES RÉFÉRENTIELS ---
 
