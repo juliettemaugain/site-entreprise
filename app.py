@@ -64,12 +64,19 @@ st.markdown("### 🚀 Menu Principal")
 row1_col1, row1_col2 = st.columns(2)
 row2_col1, row2_col2 = st.columns(2)
 
+# --- PRÉPARATION DES LIGNES ET COLONNES ---
+# On crée les colonnes pour la LIGNE 1
+row1_col1, row1_col2 = st.columns(2)
+
+# --- PRÉPARATION DES LIGNES ET COLONNES ---
+# On crée les colonnes pour la LIGNE 1
+row1_col1, row1_col2 = st.columns(2)
+
 # --- CARTE 1 : SIMULATEUR ---
 with row1_col1:
     with st.container(border=True):
         st.subheader("🍷 Simulateur")
         st.write("Calcul des rendements viticoles et estimations.")
-        # Attention : le nom du fichier doit être EXACTEMENT celui dans ton dossier pages
         st.page_link("pages/01_Simulateur_Rendements.py", label="Lancer le calcul", icon="🧮", use_container_width=True)
 
 # --- CARTE 2 : FICHES TECHNIQUES ---
@@ -79,22 +86,38 @@ with row1_col2:
         st.write("Base documentaire, pdf et itinéraires techniques.")
         st.page_link("pages/02_Fiches_Techniques.py", label="Voir les fiches", icon="📄", use_container_width=True)
 
-# --- CARTE 3 : VIDÉOS ---
+
+st.divider() # Ligne de séparation visuelle
+# On crée les colonnes pour la LIGNE 2
+row2_col1, row2_col2 = st.columns(2)
+
+# --- CARTE 3 : PILOTAGE VIGNOBLE ---
 with row2_col1:
+    with st.container(border=True):
+        st.subheader("🗺️ Pilotage du Vignoble")
+        st.write("L'avancé des travaux sur chaque parcelle.")
+        # ⚠️ Vérifie que le nom du fichier ci-dessous est EXACTEMENT le même que dans ton dossier pages
+        st.page_link("pages/04_Traçabilité_Planning.py", label="Ouvrir la carte", icon="🗺️", use_container_width=True)
+
+# --- CARTE 4 : VIDÉOS ---
+with row2_col2:
     with st.container(border=True):
         st.subheader("🎥 Tutoriels Vidéo")
         st.write("Démonstrations matériel et méthodes en vidéo.")
-        # Si tu n'as pas encore réussi à créer cette page, commente la ligne ci-dessous avec un #
         st.page_link("pages/03_Tutoriels_Video.py", label="Regarder les vidéos", icon="▶️", use_container_width=True)
 
-# --- CARTE 4 : CONTACT & AIDE ---
-with row2_col2:
+
+st.divider() # Ligne de séparation visuelle
+# On crée les colonnes pour la LIGNE 3 (Centré ou à gauche)
+row3_col1, row3_col2 = st.columns(2)
+
+# --- CARTE 5 : CONTACT & AIDE ---
+with row3_col1:
     with st.container(border=True):
-        st.subheader("Informations & Crédits")
-        st.write("Comprendre le but de cette plateforme")
+        st.subheader("ℹ️ Informations & Crédits")
+        st.write("Comprendre le but de cette plateforme.")
         st.page_link("pages/99_Infos_et_Credits.py", label="Aller voir", icon="ℹ️", use_container_width=True)
 
-st.divider()
 
 # 6. Actualités ou Message du moment (Optionnel)
 st.subheader("📢 Notes de service / Actualités")
