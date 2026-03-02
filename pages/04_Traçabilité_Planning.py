@@ -21,11 +21,11 @@ def get_static_data():
         "Viognier": "blue", 
         "Chardonnay": "orange", 
         "Syrah": "red",
-        "Grenache": "#58046d",
+        "Grenache": "#aaff00",
         "Marselan": "purple", 
         "Merlot": "darkblue", 
         "Albarino": "#ffe600",      
-        "Cabernet Franc": "#6b294b",
+        "Cabernet Franc": "#ff9900",
         "Cinsault":"#ed55a4",
         "Autre": "gray"
     }
@@ -74,7 +74,8 @@ def get_static_data():
         "P_40": {"nom": "Chardonnay 2012", "cepage": "Chardonnay", "surface": 4.53, "annee": 2012, "lat": 43.4039, "lon": 3.1170, "geometry": {"type": "Polygon", "coordinates": [[[3.116529, 43.405528], [3.114818, 43.404782], [3.116529, 43.402772], [3.119013, 43.402964], [3.118994, 43.403091], [3.117791, 43.403489], [3.117556, 43.403496], [3.117615, 43.403795], [3.117507, 43.403965], [3.117497, 43.404214], [3.117009, 43.404576], [3.117126, 43.404868], [3.116529, 43.405528]]]}},
         "P_41": {"nom": "Chardonnay 2014", "cepage": "Chardonnay", "surface": 2.53, "annee": 2014, "lat": 43.4058, "lon": 3.1155, "geometry": {"type": "Polygon", "coordinates": [[[3.113909, 43.405819], [3.114805, 43.404794], [3.116506, 43.405519], [3.116633, 43.405803], [3.116320, 43.406151], [3.115694, 43.406307], [3.115352, 43.406798], [3.113909, 43.405819]]]}},
         "P_42": {"nom": "Gauphine albarino", "cepage": "Albarino", "surface": 1.84, "annee": 2000, "lat": 43.4041, "lon": 3.1148, "geometry": {"type": "Polygon", "coordinates": [[[3.113726, 43.405831], [3.113306, 43.405412], [3.115917, 43.402578], [3.116464, 43.402798], [3.113726, 43.405831]]]}},
-        "P_43": {"nom": "Albarino fournic", "cepage": "Albarino", "surface": 0.46, "annee": 2000, "lat": 43.4036, "lon": 3.1137, "geometry": {"type": "Polygon", "coordinates": [[[3.113704, 43.404729], [3.112443, 43.403564], [3.113929, 43.402747], [3.114866, 43.403563], [3.113704, 43.404729]]]}},
+        "P_43": {"nom": "Vio fournic Bas JL", "cepage": "Viognier", "surface": 2.28, "annee": 2000, "lat": 43.4036, "lon": 3.1137, "geometry": {"type": "Polygon", "coordinates": [[[3.113704, 43.404729], [3.112443, 43.403564], [3.113929, 43.402747], [3.114866, 43.403563], [3.113704, 43.404729]]]}},
+        "P_44": {"nom": "Albarino fournic", "cepage": "Albarino", "surface": 0.46, "annee": 2000, "lat": 43.4038, "lon": 3.1101, "geometry": {"type": "Polygon", "coordinates": [[[3.110436, 43.404636], [3.109468, 43.403130], [3.109908, 43.403123], [3.110759, 43.404437], [3.110436, 43.404636]]]}},
         "P_45": {"nom": "Albarino Cortes", "cepage": "Albarino", "surface": 1.24, "annee": 2000, "lat": 43.4041, "lon": 3.1092, "geometry": {"type": "Polygon", "coordinates": [[[3.109499, 43.404650], [3.109196, 43.404787], [3.108198, 43.403553], [3.109419, 43.403102], [3.110091, 43.404125], [3.109369, 43.404356], [3.109499, 43.404650]]]}},
         "P_46": {"nom": "Marselan Sainte Lucie", "cepage": "Marselan", "surface": 1.23, "annee": 2000, "lat": 43.4396, "lon": 3.0766, "geometry": {"type": "Polygon", "coordinates": [[[3.076447, 43.440507], [3.075437, 43.439996], [3.076252, 43.439207], [3.076691, 43.439379], [3.076886, 43.439318], [3.077561, 43.439571], [3.077053, 43.439895], [3.076447, 43.440507]]]}},
         "P_47": {"nom": "Chardo TRP petite", "cepage": "Chardonnay", "surface": 0.32, "annee": 2000, "lat": 43.4392, "lon": 3.0745, "geometry": {"type": "Polygon", "coordinates": [[[3.074629, 43.439581], [3.074086, 43.439263], [3.074462, 43.438863], [3.075068, 43.439187], [3.074629, 43.439581]]]}},
