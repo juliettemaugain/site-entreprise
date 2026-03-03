@@ -122,7 +122,9 @@ with row3_col1:
 # 6. Actualités ou Message du moment (Optionnel)
 st.subheader("📢 Notes de service / Actualités")
 st.warning("""
-**Campagne 2025** : taille attachage et sécaillage en cours 
+**Campagne 2026** : taille attachage et sécaillage en cours, TRP et non taille bientôt terminée.
+           Application d'herbicides.
+           Les sols sont trempés et impraticables a certains endroits.
 """)
 
 # --- AJOUT : BOÎTE À IDÉES ---
