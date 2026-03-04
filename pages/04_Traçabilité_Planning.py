@@ -244,12 +244,15 @@ def generate_map():
         ).add_to(m)
     # --------------------------------------------------
     
-    # --- 2. AFFICHAGE DES PARCELLES ---
-  
-  # --- 2. AFFICHAGE DES PARCELLES ---
+ # --- 2. AFFICHAGE DES PARCELLES ---
     for code, info in DATA_PARCELLES.items():
         if "geometry" in info:
-            # Création de la belle carte d'identité en HTML pour le clic (Popup)
+            # On prépare les lignes : si l'info existe, on crée la ligne avec le <br> (retour à la ligne), sinon on met du vide ("")
+            ligne_taille = f"<b>Conduite :</b> {info['taille']}<br>" if 'taille' in info else ""
+            ligne_objectif = f"<b>Objectif :</b> {info['objectif']}<br>" if 'objectif' in info else ""
+            ligne_irrigation = f"<b>Irrigation :</b> {info['irrigation']}" if 'irrigation' in info else ""
+            
+            # Création de la belle carte d'identité en HTML
             html_popup = f"""
             <div style="width: 200px; font-family: Arial, sans-serif;">
                 <h4 style="margin-bottom: 5px; color: #333;">🍇 {info['nom']}</h4>
@@ -257,9 +260,9 @@ def generate_map():
                 <b>Surface :</b> {info['surface']} ha<br>
                 <b>Plantation :</b> {info.get('annee', 'N/A')}<br>
                 <hr style="margin: 8px 0; border-top: 1px solid #ccc;">
-                <b>Conduite :</b> {info.get('taille', 'Non renseigné')}<br>
-                <b>Objectif :</b> {info.get('objectif', 'Non renseigné')}<br>
-                <b>Irrigation :</b> {info.get('irrigation', 'Non renseigné')}
+                {ligne_taille}
+                {ligne_objectif}
+                {ligne_irrigation}
             </div>
             """
             
@@ -268,8 +271,8 @@ def generate_map():
                 style_function=lambda x, c=info.get("color","gray"): {
                     'fillColor': c, 'color': 'white', 'weight': 1, 'fillOpacity': 0.5
                 },
-                tooltip=f"{info['nom']} (Clic pour + d'infos)", # Le texte au survol
-                popup=folium.Popup(html_popup, max_width=250)   # La fiche complète au clic
+                tooltip=f"{info['nom']} (Clic pour + d'infos)", 
+                popup=folium.Popup(html_popup, max_width=250)   
             ).add_to(m)
         
         # Le nom flottant au centre de la parcelle
