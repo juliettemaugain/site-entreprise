@@ -33,7 +33,7 @@ def get_static_data():
     }
 
     DATA_PARCELLES = {
-        "P_00": {"nom": "Syrah Isabelle", "cepage": "Syrah", "surface": 0.56, "annee": 2019, "lat": 43.4290, "lon": 3.0930, "geometry": {"type": "Polygon", "coordinates": [[[3.092493, 43.429614], [3.092055, 43.428946], [3.093490, 43.428517], [3.093604, 43.428660], [3.093541, 43.428766], [3.093464, 43.428844], [3.093363, 43.428914], [3.093242, 43.428914], [3.093128, 43.428932], [3.092595, 43.429582], [3.092493, 43.429614]]]}},
+        "P_00": {"nom": "Syrah Isabelle", "cepage": "Syrah", "surface": 0.56, "annee": 2019, "lat": 43.4290, "lon": 3.0930, "taille": "Palmette", "objectif": "Rosé premium", "irrigation": "Goutte à goutte", "geometry": {"type": "Polygon", "coordinates": [[[3.092493, 43.429614], [3.092055, 43.428946], [3.093490, 43.428517], [3.093604, 43.428660], [3.093541, 43.428766], [3.093464, 43.428844], [3.093363, 43.428914], [3.093242, 43.428914], [3.093128, 43.428932], [3.092595, 43.429582], [3.092493, 43.429614]]]}},
         "P_01": {"nom": "Olivette", "cepage": "Syrah", "surface": 2.57, "annee": 2010, "lat": 43.4278, "lon": 3.0920, "geometry": {"type": "Polygon", "coordinates": [[[3.091501, 43.429019], [3.091162, 43.428491], [3.091705, 43.428113], [3.091867, 43.428020], [3.091113, 43.426822], [3.091776, 43.426797], [3.092495, 43.426894], [3.092798, 43.427365], [3.093003, 43.427693], [3.093447, 43.428450], [3.092072, 43.428886], [3.091501, 43.429019]]]}},
         "P_02": {"nom": "Vio Jardin", "cepage": "Viognier", "surface": 0.86, "annee": 2015, "lat": 43.4280, "lon": 3.0938, "geometry": {"type": "Polygon", "coordinates": [[[3.094155, 43.428700], [3.093952, 43.428501], [3.093641, 43.428575], [3.092930, 43.427353], [3.093673, 43.427178], [3.094435, 43.428640], [3.094155, 43.428700]]]}},
         "P_03": {"nom": "Amandier", "cepage": "Syrah", "surface": 3.29, "annee": 2005, "lat": 43.4280, "lon": 3.0905, "geometry": {"type": "Polygon", "coordinates": [[[3.091457, 43.429064], [3.090289, 43.429451], [3.089769, 43.429290], [3.090080, 43.428529], [3.089832, 43.428031], [3.090270, 43.426915], [3.091108, 43.426837], [3.091832, 43.428013], [3.091146, 43.428492], [3.091457, 43.429064]]]}},
@@ -245,16 +245,34 @@ def generate_map():
     # --------------------------------------------------
     
     # --- 2. AFFICHAGE DES PARCELLES ---
+  
+  # --- 2. AFFICHAGE DES PARCELLES ---
     for code, info in DATA_PARCELLES.items():
         if "geometry" in info:
+            # Création de la belle carte d'identité en HTML pour le clic (Popup)
+            html_popup = f"""
+            <div style="width: 200px; font-family: Arial, sans-serif;">
+                <h4 style="margin-bottom: 5px; color: #333;">🍇 {info['nom']}</h4>
+                <b>Cépage :</b> {info['cepage']}<br>
+                <b>Surface :</b> {info['surface']} ha<br>
+                <b>Plantation :</b> {info.get('annee', 'N/A')}<br>
+                <hr style="margin: 8px 0; border-top: 1px solid #ccc;">
+                <b>Conduite :</b> {info.get('taille', 'Non renseigné')}<br>
+                <b>Objectif :</b> {info.get('objectif', 'Non renseigné')}<br>
+                <b>Irrigation :</b> {info.get('irrigation', 'Non renseigné')}
+            </div>
+            """
+            
             folium.GeoJson(
                 info["geometry"],
                 style_function=lambda x, c=info.get("color","gray"): {
                     'fillColor': c, 'color': 'white', 'weight': 1, 'fillOpacity': 0.5
                 },
-                tooltip=f"{info['nom']} ({info['surface']} ha)"
+                tooltip=f"{info['nom']} (Clic pour + d'infos)", # Le texte au survol
+                popup=folium.Popup(html_popup, max_width=250)   # La fiche complète au clic
             ).add_to(m)
         
+        # Le nom flottant au centre de la parcelle
         folium.map.Marker(
             [info["lat"], info["lon"]],
             icon=folium.DivIcon(
@@ -262,12 +280,9 @@ def generate_map():
                 html=f"""<div style="font-size: 11px; font-weight: bold; color: white; text-shadow: 1px 1px 3px #000000; text-align: center; white-space: nowrap; pointer-events: none;">{info['nom']}</div>"""
             )
         ).add_to(m)
-        
-        folium.CircleMarker(
-            [info["lat"], info["lon"]], radius=15, fill_color=info.get("color","gray"), fill_opacity=0.0, stroke=False
-        ).add_to(m)
 
     return m
+#3 la map
 
 m = generate_map()
 col_map, col_legend = st.columns([5, 1])
