@@ -90,8 +90,16 @@ DATA_PARCELLES = {
         "P_82": {"nom": "Petite Syrah", "cepage": "Syrah", "surface": 0.42, "annee": 2000, "lat": 43.4204, "lon": 3.0698, "geometry": {"type": "Polygon", "coordinates": [[[3.070053, 43.420915], [3.069106, 43.420292], [3.069501, 43.419992], [3.070465, 43.420642], [3.070053, 43.420915]]]}},
         "P_83": {"nom": "Petit Grenache", "cepage": "Grenache", "surface": 0.38, "annee": 2000, "lat": 43.4208, "lon": 3.0714, "geometry": {"type": "Polygon", "coordinates": [[[3.071219, 43.421226], [3.070781, 43.420953], [3.070938, 43.420698], [3.071727, 43.420437], [3.071911, 43.420774], [3.071622, 43.421042], [3.071219, 43.421226]]]}},
         "P_84": {"nom": "Grenache Capel", "cepage": "Grenache", "surface": 1.39, "annee": 2000, "lat": 43.4198, "lon": 3.0705, "geometry": {"type": "Polygon", "coordinates": [[[3.070682, 43.420738], [3.069403, 43.419892], [3.070051, 43.419497], [3.069823, 43.418981], [3.070244, 43.418867], [3.070674, 43.419643], [3.071611, 43.420401], [3.071331, 43.420490], [3.071094, 43.420496], [3.070682, 43.420738]]]}}
-        }# ... (le reste de tes données DATA_PARCELLES)
+        }# ... 
 
+# --- AJOUTER LES BORNES (après les parcelles) ---
+for borne_id, borne in DATA_BORNES.items():
+    folium.Marker(
+        location=[borne["lat"], borne["lon"]],
+        icon=folium.Icon(color="blue", icon="tint", prefix="fa"),
+        tooltip=f"Borne {borne_id}: {borne['nom']}",
+        popup=f"<b>Borne {borne_id}</b><br>Débit: {borne.get('debit', 'N/A')} m³/h"
+    ).add_to(m)
 
 # --- FONCTION POUR CRÉER LA CARTE ---
 def create_map():
