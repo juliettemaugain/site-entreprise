@@ -1,0 +1,6 @@
+id,nom,type,secteur,parcelle,lat,lon,status,debit,pression,derniere_maintenance,prochaine_maintenance,notes
+Borne A,Borne A,Borne,DOMAINE PRINCIPAL,P_00,43.4290,3.0930,OK,50.0,2.5,2023-10-15,2024-04-15,Vanne principale pour le secteur A
+F_01,Filtre Entrée Secteur B,Filtre,SECTEUR SAVIGNAC,P_68,43.4175,3.1167,Maintenance,30.0,1.8,2023-11-20,2024-05-20,Filtre à nettoyer tous les 3 mois
+V_01,Vanne A1,Vanne,DOMAINE PRINCIPAL,P_01,43.4285,3.0925,OK,25.0,2.0,2023-10-10,2024-04-10,Vanne secondaire secteur A
+P_01,Pompe Principale,Pompe,DOMAINE PRINCIPAL,,43.4295,3.0935,OK,100.0,3.0,2023-09-01,2024-03-01,Pompe principale du domaine
+
