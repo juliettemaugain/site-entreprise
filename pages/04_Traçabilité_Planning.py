@@ -354,7 +354,7 @@ def generate_map():
         "SECTEUR GAUPHINE": [43.4025, 3.1155],
         "SECTEUR SAINTE LUCIE": [43.4405, 3.0735],
         "SECTEUR SAVIGNAC": [43.4180, 3.1230],
-        "SECTEUR ROUTE / BERLAN": [43.4210, 3.0700],
+        "SECTEUR LA JASSE NEUVE": [43.4210, 3.0700],
         "DOMAINE PRINCIPAL": [43.4260, 3.0900] # La zone historique
     }
 
