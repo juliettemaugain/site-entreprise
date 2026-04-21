@@ -98,25 +98,23 @@ DATA_BORNES = {
         "nom": "Borne Principale Gauphine",
         "lat": 43.4025,
         "lon": 3.1155,
-        "debit": 20,  # m³/h
-        "pression": 3.5,  # bars
-        "photos": [
-            "images/bornes/B01_front.jpg",
-            "images/bornes/B01_plaque.jpg"
-        ],
+        "debit": 20,
+        "pression": 3.5,
+        "photos": ["images/bornes/B01_front.jpg", "images/bornes/B01_plaque.jpg"],
         "explications": """
         <b>Nettoyage</b> :
-        - Vérifier le filtre tous les 15 jours en période d'irrigation.
+        - Vérifier le filtre tous les 15 jours en été.
         - Détartrer le manomètre tous les 3 mois.
 
         <b>Particularités</b> :
         - Vanne principale pour les secteurs Gauphine et Savignac.
         - Équipée d'un compteur d'eau connecté (ID: GW-2023-045).
         """,
-        "statut": "OK",  # "OK", "À nettoyer", "En panne"
-        "vannes_associées": ["V_01", "V_02", "V_03"]
+        "statut": "OK",
+        "vannes_associées": ["V_01", "V_02"]
     }
 }
+
 DATA_VANNES = {
     "V_01": {
         "nom": "Vanne Syrah Isabelle",
@@ -132,62 +130,107 @@ DATA_VANNES = {
         <b>Réglages</b> :
         - Pression nominale : 2.5 bars
         - Débit max : 8 m³/h
-
-        <b>Problèmes courants</b> :
-        - Fuite au niveau du joint (à vérifier tous les mois).
         """,
         "borne_associée": "B_01",
         "parcelles_associées": ["P_00", "P_02"]
     }
 }
 
-DATA_FILTRES = {
-    "F_01": {
-        "nom": "Filtre à disques Gauphine",
-        "lat": 43.4030,
-        "lon": 3.1160,
-        "type": "Filtre 120 mesh",
-        "photos": ["images/filtres/F01_disques.jpg"],
-        "explications": """
-        <b>Nettoyage</b> :
-        - Rincer les disques tous les 7 jours en été.
-        - Vérifier l'état des joints tous les 2 mois.
+# ====================== 2. FONCTIONS UTILITAIRES ======================
+def create_popup_content(equipement, equipement_type):
+    """Crée le contenu HTML du popup pour un équipement (borne, vanne, etc.)"""
+    statut_color = "green" if equipement.get("statut", "OK") == "OK" else "red"
 
-        <b>Signes d'usure</b> :
-        - Perte de pression > 0.5 bar.
-        - Débris visibles dans l'eau de rinçage.
-        """,
-        "borne_associée": "B_01"
-    }
-}
+    if equipement_type == "borne":
+        content = f"""
+        <h4>{equipement['nom']}</h4>
+        <b>Débit :</b> {equipement['debit']} m³/h<br>
+        <b>Pression :</b> {equipement['pression']} bars<br>
+        <b>Statut :</b> <span style="color: {statut_color}">{equipement.get('statut', 'OK')}</span>
+        <hr>
+        <div style="width: 250px;">
+            {equipement['explications']}
+        </div>
+        """
+    elif equipement_type == "vanne":
+        content = f"""
+        <h4>{equipement['nom']}</h4>
+        <b>Type :</b> {equipement['type']}<br>
+        <b>Borne associée :</b> {equipement['borne_associée']}<br>
+        <b>Parcelles :</b> {', '.join(equipement['parcelles_associées'])}
+        <hr>
+        <div style="width: 250px;">
+            {equipement['explications']}
+        </div>
+        """
+    return content
 
-
-# --- CRÉATION DE LA CARTE ---
-center_lat = sum(p["lat"] for p in DATA_PARCELLES.values()) / len(DATA_PARCELLES)
-center_lon = sum(p["lon"] for p in DATA_PARCELLES.values()) / len(DATA_PARCELLES)
+# ====================== 3. CRÉATION DE LA CARTE ======================
+# Centre la carte sur tes équipements
+center_lat = sum(b["lat"] for b in DATA_BORNES.values()) / len(DATA_BORNES)
+center_lon = sum(b["lon"] for b in DATA_BORNES.values()) / len(DATA_BORNES)
 
 m = folium.Map(
     location=[center_lat, center_lon],
-    zoom_start=16,
-    tiles="https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}",  # Satellite
-    attr="Esri World Imagery"
+    zoom_start=15,
+    tiles="https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}"  # Fond satellite
 )
 
-# Ajouter les parcelles
-for parcelle_id, parcelle in DATA_PARCELLES.items():
-    folium.GeoJson(
-        parcelle["geometry"],
-        style_function=lambda x: {"fillColor": "#808080", "color": "#404040", "fillOpacity": 0.3},
-        tooltip=f"Parcelle {parcelle_id}: {parcelle['nom']}"
-    ).add_to(m)
-
-# Ajouter les bornes (après les parcelles)
+# --- Ajouter les bornes ---
 for borne_id, borne in DATA_BORNES.items():
-    folium.Marker(
+    # Créer le popup avec le contenu HTML
+    popup_content = create_popup_content(borne, "borne")
+
+    # Ajouter le marqueur
+    marker = folium.Marker(
         location=[borne["lat"], borne["lon"]],
         icon=folium.Icon(color="blue", icon="tint", prefix="fa"),
         tooltip=f"Borne {borne_id}"
     ).add_to(m)
 
-# Afficher dans Streamlit
-st_folium(m, width=700, height=500)
+    # Ajouter le popup au marqueur
+    marker.get_root().html.add_child(folium.Element(popup_content))
+
+    # Ajouter les photos (si elles existent)
+    if "photos" in borne:
+        for photo_path in borne["photos"]:
+            try:
+                FloatImage(photo_path, bottom=5, left=5).add_to(marker)
+            except:
+                st.warning(f"Photo introuvable : {photo_path}")
+
+# --- Ajouter les vannes ---
+for vanne_id, vanne in DATA_VANNES.items():
+    popup_content = create_popup_content(vanne, "vanne")
+
+    folium.Marker(
+        location=[vanne["lat"], vanne["lon"]],
+        icon=folium.Icon(color="green", icon="fa-solid fa-faucet", prefix="fa"),
+        tooltip=f"Vanne {vanne_id}"
+    ).add_child(folium.Popup(popup_content, max_width=300)).add_to(m)
+
+    # Ajouter les photos (si elles existent)
+    if "photos" in vanne:
+        for photo_path in vanne["photos"]:
+            try:
+                FloatImage(photo_path, bottom=5, left=5).add_to(m)
+            except:
+                st.warning(f"Photo introuvable : {photo_path}")
+
+# --- Relier les bornes aux vannes ---
+for borne_id, borne in DATA_BORNES.items():
+    for vanne_id in borne.get("vannes_associées", []):
+        if vanne_id in DATA_VANNES:
+            folium.PolyLine(
+                locations=[
+                    [borne["lat"], borne["lon"]],
+                    [DATA_VANNES[vanne_id]["lat"], DATA_VANNES[vanne_id]["lon"]]
+                ],
+                color="blue",
+                weight=2,
+                dash_array="5, 5"  # Ligne pointillée
+            ).add_to(m)
+
+# ====================== 4. AFFICHAGE DANS STREAMLIT ======================
+st.title("💧 Gestion de l'Irrigation")
+st_folium(m, width=800, height=600)
