@@ -39,9 +39,9 @@ def load_irrigation_data():
         # Données par défaut (à remplacer par vos données réelles)
         return [
             {
-                "id": "V_01",
-                "nom": "Vanne Principale Secteur A",
-                "type": "Vanne",
+                "id": "Borne A",
+                "nom": "Borne A",
+                "type": "Borne",
                 "secteur": "DOMAINE PRINCIPAL",
                 "parcelle": "P_00",  # Syrah Isabelle
                 "lat": 43.4290,
@@ -95,59 +95,94 @@ def generate_irrigation_map():
             )
         ).add_to(m)
 
-    # --- 2. AJOUTER LES PARCELLES (en transparence) ---
-    for code, info in DATA_PARCELLES.items():
-        if "geometry" in info:
-            folium.GeoJson(
-                info["geometry"],
-                style_function=lambda x: {
-                    'fillColor': "#cccccc",  # Gris clair
-                    'color': "#aaaaaa",     # Gris foncé
-                    'weight': 1,
-                    'fillOpacity': 0.2      # Très transparent
-                },
-                tooltip=info["nom"]
-            ).add_to(m)
-
-    # --- 3. AJOUTER LES ÉQUIPEMENTS D'IRRIGATION ---
-    equipments = load_irrigation_data()
-    for eq in equipments:
-        # Couleur en fonction du statut
-        color = STATUS_COLORS.get(eq["status"], "#95a5a6")  # Gris par défaut
-
-        # Popup HTML pour afficher les détails
-        html_popup = f"""
-        <div style="width: 250px; font-family: Arial, sans-serif;">
-            <h4 style="margin-bottom: 5px; color: {COLOR_EQUIPMENT[eq['type']]};">{eq['type']} - {eq['nom']}</h4>
-            <b>ID :</b> {eq['id']}<br>
-            <b>Secteur :</b> {eq['secteur']}<br>
-            <b>Parcelle :</b> {DATA_PARCELLES.get(eq['parcelle'], {}).get('nom', 'N/A')}<br>
-            <hr style="margin: 8px 0; border-top: 1px solid #ccc;">
-            <b>Statut :</b> <span style="color: {color};">{eq['status']}</span><br>
-            <b>Débit :</b> {eq['debit']} L/min<br>
-            <b>Pression :</b> {eq['pression']} bar<br>
-            <b>Dernière maintenance :</b> {eq['derniere_maintenance']}<br>
-            <b>Prochaine maintenance :</b> {eq['prochaine_maintenance']}<br>
-            <hr style="margin: 8px 0; border-top: 1px solid #ccc;">
-            <b>Notes :</b><br>
-            <div style="font-size: 12px; color: #555;">{eq['notes']}</div>
-        </div>
-        """
-
-        # Ajouter le marqueur
-        folium.Marker(
-            [eq["lat"], eq["lon"]],
-            icon=folium.Icon(
-                icon="tint",          # Icône "goutte d'eau"
-                prefix="fa",          # Utilise Font Awesome
-                color=color,
-                icon_color="white"
-            ),
-            popup=folium.Popup(html_popup, max_width=300),
-            tooltip=f"{eq['type']} - {eq['nom']} ({eq['status']})"
+   # --- 2. AJOUTER LES PARCELLES (EN TRANSPARENCE) ---
+for code, info in DATA_PARCELLES.items():
+    if "geometry" in info:
+        folium.GeoJson(
+            info["geometry"],
+            style_function=lambda x: {
+                'fillColor': "#cccccc",  # Gris clair
+                'color': "#aaaaaa",     # Gris foncé
+                'weight': 1,
+                'fillOpacity': 0.2      # Très transparent
+            },
+            tooltip=info["nom"]
         ).add_to(m)
 
-    return m
+# --- 3. AJOUTER LES ÉQUIPEMENTS D'IRRIGATION (SECTEUR CAZAL VIEL) ---
+# Coordonnées estimées des bornes (à ajuster avec tes données GPS réelles)
+BORNES = {
+    "Borne A": {"coords": [43.4265, 3.0910], "debit": "25 m³/h", "surface": "3,5 ha"},
+    "Borne B": {"coords": [43.4270, 3.0905], "debit": "20 m³/h", "surface": "2,8 ha"},
+    "Borne C": {"coords": [43.4275, 3.0920], "debit": "25 m³/h", "surface": "3,5 ha"},
+    "Borne D": {"coords": [43.4260, 3.0930], "debit": "35 m³/h", "surface": "4,9 ha"},
+    "Borne K": {"coords": [43.4255, 3.0890], "debit": "20 m³/h", "surface": "2,8 ha"},
+}
+
+# Coordonnées estimées des vannes (à ajuster avec tes données GPS réelles)
+VANNES = {
+    # Vannes liées à la Borne A
+    "A1": {"coords": [43.4268, 3.0912], "borne": "Borne A", "parcelles": ["Syrah Isabelle"]},
+    "A2": {"coords": [43.4270, 3.0915], "borne": "Borne A", "parcelles": ["Olivette"]},
+    "A3": {"coords": [43.4272, 3.0918], "borne": "Borne A", "parcelles": ["Roumanissas"]},
+    "A4": {"coords": [43.4274, 3.0920], "borne": "Borne A", "parcelles": ["Nouveau plantier Syrah"]},
+    "A5": {"coords": [43.4276, 3.0922], "borne": "Borne A", "parcelles": ["Plantier"]},
+    "A6": {"coords": [43.4278, 3.0925], "borne": "Borne A", "parcelles": ["Viognier Jardin"]},
+    "A7": {"coords": [43.4280, 3.0928], "borne": "Borne A", "parcelles": ["Hébram"]},
+
+    # Vannes liées à la Borne B
+    "B1": {"coords": [43.4265, 3.0900], "borne": "Borne B", "parcelles": ["Calvet"]},
+    "B2": {"coords": [43.4263, 3.0895], "borne": "Borne B", "parcelles": ["La Plaine"]},
+    "B3": {"coords": [43.4260, 3.0890], "borne": "Borne B", "parcelles": ["Amandier"]},
+    "B4": {"coords": [43.4258, 3.0885], "borne": "Borne B", "parcelles": ["Trompet"]},
+
+    # Vannes liées à la Borne C
+    "C1": {"coords": [43.4275, 3.0925], "borne": "Borne C", "parcelles": ["Saigne"]},
+    "C2": {"coords": [43.4273, 3.0922], "borne": "Borne C", "parcelles": ["Grand Bardou"]},
+    "C3": {"coords": [43.4270, 3.0920], "borne": "Borne C", "parcelles": ["Terret"]},
+    "C4": {"coords": [43.4268, 3.0918], "borne": "Borne C", "parcelles": ["Syrah Coural"]},
+    "C5": {"coords": [43.4265, 3.0915], "borne": "Borne C", "parcelles": ["Viognier source romaine"]},
+    "C6": {"coords": [43.4263, 3.0912], "borne": "Borne C", "parcelles": ["Phylloxera"]},
+    "C7": {"coords": [43.4260, 3.0910], "borne": "Borne C", "parcelles": ["Viognier Alazet"]},
+
+    # Vannes liées à la Borne D
+    "D1": {"coords": [43.4255, 3.0935], "borne": "Borne D", "parcelles": ["Petit Bardou"]},
+    "D2": {"coords": [43.4250, 3.0930], "borne": "Borne D", "parcelles": ["BRL - D20002"]},
+    "D3": {"coords": [43.4248, 3.0925], "borne": "Borne D", "parcelles": ["BRL - D20003"]},
+    "D4": {"coords": [43.4245, 3.0920], "borne": "Borne D", "parcelles": ["Da1"]},
+    "D5": {"coords": [43.4243, 3.0915], "borne": "Borne D", "parcelles": ["Da2"]},
+    "D6": {"coords": [43.4240, 3.0910], "borne": "Borne D", "parcelles": ["Viognier Alazet cabane"]},
+    "D7": {"coords": [43.4238, 3.0905], "borne": "Borne D", "parcelles": ["Plantier terret"]},
+
+    # Vannes liées à la Borne K
+    "K1": {"coords": [43.4250, 3.0885], "borne": "Borne K", "parcelles": ["Caravane"]},
+    "K2": {"coords": [43.4252, 3.0888], "borne": "Borne K", "parcelles": ["Filtre K"]},
+}
+
+# Ajouter les bornes à la carte
+for nom_borne, info in BORNES.items():
+    folium.Marker(
+        location=info["coords"],
+        popup=f"""
+        <b>{nom_borne}</b><br>
+        Débit : {info['debit']}<br>
+        Surface irriguée : {info['surface']}
+        """,
+        icon=folium.Icon(color="blue", icon="tint", prefix="fa")  # Icône bleue pour les bornes
+    ).add_to(m)
+
+# Ajouter les vannes à la carte
+for nom_vanne, info in VANNES.items():
+    folium.Marker(
+        location=info["coords"],
+        popup=f"""
+        <b>Vanne {nom_vanne}</b><br>
+        Borne associée : {info['borne']}<br>
+        Parcelles irriguées : {', '.join(info['parcelles'])}
+        """,
+        icon=folium.Icon(color="green", icon="cog", prefix="fa")  # Icône verte pour les vannes
+    ).add_to(m)
+
 
 # --- 4. INTERFACE UTILISATEUR ---
 # Colonnes pour la carte et les filtres
