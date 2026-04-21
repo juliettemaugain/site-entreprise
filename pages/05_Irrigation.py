@@ -166,14 +166,15 @@ def create_popup_content(equipement, equipement_type):
     return content
 
 # ====================== 3. CRÉATION DE LA CARTE ======================
-# Centre la carte sur tes équipements
+# Calcul du centre de la carte (moyenne des coordonnées des bornes)
 center_lat = sum(b["lat"] for b in DATA_BORNES.values()) / len(DATA_BORNES)
 center_lon = sum(b["lon"] for b in DATA_BORNES.values()) / len(DATA_BORNES)
 
 m = folium.Map(
     location=[center_lat, center_lon],
     zoom_start=15,
-    tiles="https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}"  # Fond satellite
+    tiles="https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}",
+    attr='Tiles &copy; Esri &mdash; Source: Esri, i-cubed, USDA, USGS, AEX, GeoEye, Getmapping, Aerogrid, IGN, IGP, UPR-EGP, and the GIS User Community'
 )
 
 # --- Ajouter les bornes ---
