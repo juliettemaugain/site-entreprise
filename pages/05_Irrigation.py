@@ -94,8 +94,73 @@ DATA_PARCELLES = {
 
 
 DATA_BORNES = {
-    "B_01": {"nom": "Borne Principale", "lat": 43.4285, "lon": 3.0925, "debit": 15}
+    "B_01": {
+        "nom": "Borne Principale Gauphine",
+        "lat": 43.4025,
+        "lon": 3.1155,
+        "debit": 20,  # m³/h
+        "pression": 3.5,  # bars
+        "photos": [
+            "images/bornes/B01_front.jpg",
+            "images/bornes/B01_plaque.jpg"
+        ],
+        "explications": """
+        <b>Nettoyage</b> :
+        - Vérifier le filtre tous les 15 jours en période d'irrigation.
+        - Détartrer le manomètre tous les 3 mois.
+
+        <b>Particularités</b> :
+        - Vanne principale pour les secteurs Gauphine et Savignac.
+        - Équipée d'un compteur d'eau connecté (ID: GW-2023-045).
+        """,
+        "statut": "OK",  # "OK", "À nettoyer", "En panne"
+        "vannes_associées": ["V_01", "V_02", "V_03"]
+    }
 }
+DATA_VANNES = {
+    "V_01": {
+        "nom": "Vanne Syrah Isabelle",
+        "lat": 43.4290,
+        "lon": 3.0930,
+        "type": "Électrovanne 2 pouces",
+        "photos": ["images/vannes/V01_vanne.jpg"],
+        "explications": """
+        <b>Parcelles irriguées</b> :
+        - P_00 (Syrah Isabelle)
+        - P_02 (Grenache Noir)
+
+        <b>Réglages</b> :
+        - Pression nominale : 2.5 bars
+        - Débit max : 8 m³/h
+
+        <b>Problèmes courants</b> :
+        - Fuite au niveau du joint (à vérifier tous les mois).
+        """,
+        "borne_associée": "B_01",
+        "parcelles_associées": ["P_00", "P_02"]
+    }
+}
+
+DATA_FILTRES = {
+    "F_01": {
+        "nom": "Filtre à disques Gauphine",
+        "lat": 43.4030,
+        "lon": 3.1160,
+        "type": "Filtre 120 mesh",
+        "photos": ["images/filtres/F01_disques.jpg"],
+        "explications": """
+        <b>Nettoyage</b> :
+        - Rincer les disques tous les 7 jours en été.
+        - Vérifier l'état des joints tous les 2 mois.
+
+        <b>Signes d'usure</b> :
+        - Perte de pression > 0.5 bar.
+        - Débris visibles dans l'eau de rinçage.
+        """,
+        "borne_associée": "B_01"
+    }
+}
+
 
 # --- CRÉATION DE LA CARTE ---
 center_lat = sum(p["lat"] for p in DATA_PARCELLES.values()) / len(DATA_PARCELLES)
