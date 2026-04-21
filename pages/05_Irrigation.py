@@ -92,7 +92,7 @@ DATA_PARCELLES = {
         "P_84": {"nom": "Grenache Capel", "cepage": "Grenache", "surface": 1.39, "annee": 2000, "lat": 43.4198, "lon": 3.0705, "geometry": {"type": "Polygon", "coordinates": [[[3.070682, 43.420738], [3.069403, 43.419892], [3.070051, 43.419497], [3.069823, 43.418981], [3.070244, 43.418867], [3.070674, 43.419643], [3.071611, 43.420401], [3.071331, 43.420490], [3.071094, 43.420496], [3.070682, 43.420738]]]}}
         }# ... 
 
-
+# --- BORNES ET VANNES (tes données existantes) ---
 DATA_BORNES = {
     "B_01": {
         "nom": "Borne Principale Gauphine",
@@ -100,18 +100,10 @@ DATA_BORNES = {
         "lon": 3.1155,
         "debit": 20,
         "pression": 3.5,
-        "photos": ["images/bornes/B01_front.jpg", "images/bornes/B01_plaque.jpg"],
-        "explications": """
-        <b>Nettoyage</b> :
-        - Vérifier le filtre tous les 15 jours en été.
-        - Détartrer le manomètre tous les 3 mois.
-
-        <b>Particularités</b> :
-        - Vanne principale pour les secteurs Gauphine et Savignac.
-        - Équipée d'un compteur d'eau connecté (ID: GW-2023-045).
-        """,
+        "photos": ["images/bornes/B01_front.jpg"],
+        "explications": "Nettoyage: vérifier le filtre tous les 15 jours...",
         "statut": "OK",
-        "vannes_associées": ["V_01", "V_02"]
+        "vannes_associées": ["V_01"]
     }
 }
 
@@ -122,51 +114,61 @@ DATA_VANNES = {
         "lon": 3.0930,
         "type": "Électrovanne 2 pouces",
         "photos": ["images/vannes/V01_vanne.jpg"],
-        "explications": """
-        <b>Parcelles irriguées</b> :
-        - P_00 (Syrah Isabelle)
-        - P_02 (Grenache Noir)
-
-        <b>Réglages</b> :
-        - Pression nominale : 2.5 bars
-        - Débit max : 8 m³/h
-        """,
+        "explications": "Parcelles irriguées: P_00 (Syrah Isabelle)...",
         "borne_associée": "B_01",
-        "parcelles_associées": ["P_00", "P_02"]
+        "parcelles_associées": ["P_00"]
     }
 }
 
 # ====================== 2. FONCTIONS UTILITAIRES ======================
 def create_popup_content(equipement, equipement_type):
-    """Crée le contenu HTML du popup pour un équipement (borne, vanne, etc.)"""
-    statut_color = "green" if equipement.get("statut", "OK") == "OK" else "red"
-
+    """Crée le contenu HTML pour les popups"""
     if equipement_type == "borne":
-        content = f"""
+        return f"""
         <h4>{equipement['nom']}</h4>
-        <b>Débit :</b> {equipement['debit']} m³/h<br>
-        <b>Pression :</b> {equipement['pression']} bars<br>
-        <b>Statut :</b> <span style="color: {statut_color}">{equipement.get('statut', 'OK')}</span>
+        <b>Débit:</b> {equipement['debit']} m³/h<br>
+        <b>Pression:</b> {equipement['pression']} bars<br>
         <hr>
-        <div style="width: 250px;">
-            {equipement['explications']}
-        </div>
+        {equipement['explications']}
         """
     elif equipement_type == "vanne":
-        content = f"""
+        return f"""
         <h4>{equipement['nom']}</h4>
-        <b>Type :</b> {equipement['type']}<br>
-        <b>Borne associée :</b> {equipement['borne_associée']}<br>
-        <b>Parcelles :</b> {', '.join(equipement['parcelles_associées'])}
+        <b>Type:</b> {equipement['type']}<br>
+        <b>Borne:</b> {equipement['borne_associée']}<br>
+        <b>Parcelles:</b> {', '.join(equipement['parcelles_associées'])}
         <hr>
-        <div style="width: 250px;">
-            {equipement['explications']}
-        </div>
+        {equipement['explications']}
         """
-    return content
+    return ""
+
+def add_parcelle_to_map(m, parcelle_id, parcelle):
+    """Ajoute une parcelle à la carte Folium"""
+    # Couleur selon le cépage
+    color_map = {
+        "Syrah": "#8B0000",  # Rouge foncé
+        "Viognier": "#FFD700",  # Or
+        "Grenache": "#FF6347",  # Tomate
+        "Chardonnay": "#F5DEB3",  # Blé
+        "Albarino": "#90EE90",  # Vert clair
+        "Merlot": "#800020",  # Bordeaux
+        "Cinsault": "#FFB6C1",  # Rose clair
+        "Marselan": "#800080"  # Violet
+    }
+
+    folium.GeoJson(
+        parcelle["geometry"],
+        style_function=lambda x: {
+            "fillColor": color_map.get(parcelle["cepage"], "#3388ff"),
+            "color": "black",
+            "weight": 1,
+            "fillOpacity": 0.5
+        },
+        tooltip=f"{parcelle['nom']} ({parcelle['cepage']}) - {parcelle['surface']} ha"
+    ).add_to(m)
 
 # ====================== 3. CRÉATION DE LA CARTE ======================
-# Calcul du centre de la carte (moyenne des coordonnées des bornes)
+# Calcul du centre (moyenne des bornes)
 center_lat = sum(b["lat"] for b in DATA_BORNES.values()) / len(DATA_BORNES)
 center_lon = sum(b["lon"] for b in DATA_BORNES.values()) / len(DATA_BORNES)
 
@@ -174,51 +176,42 @@ m = folium.Map(
     location=[center_lat, center_lon],
     zoom_start=15,
     tiles="https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}",
-    attr='Tiles &copy; Esri &mdash; Source: Esri, i-cubed, USDA, USGS, AEX, GeoEye, Getmapping, Aerogrid, IGN, IGP, UPR-EGP, and the GIS User Community'
+    attr='Tiles &copy; Esri'
 )
 
-# --- Ajouter les bornes ---
-for borne_id, borne in DATA_BORNES.items():
-    # Créer le popup avec le contenu HTML
-    popup_content = create_popup_content(borne, "borne")
+# --- 1. Ajouter les PARCELLES en premier ---
+for parcelle_id, parcelle in DATA_PARCELLES.items():
+    add_parcelle_to_map(m, parcelle_id, parcelle)
 
-    # Ajouter le marqueur
+# --- 2. Ajouter les BORNES ---
+for borne_id, borne in DATA_BORNES.items():
+    popup_content = create_popup_content(borne, "borne")
     marker = folium.Marker(
         location=[borne["lat"], borne["lon"]],
         icon=folium.Icon(color="blue", icon="tint", prefix="fa"),
         tooltip=f"Borne {borne_id}"
     ).add_to(m)
 
-    # Ajouter le popup au marqueur
     marker.get_root().html.add_child(folium.Element(popup_content))
 
-    # Ajouter les photos (si elles existent)
+    # Photos
     if "photos" in borne:
-        for photo_path in borne["photos"]:
+        for photo in borne["photos"]:
             try:
-                FloatImage(photo_path, bottom=5, left=5).add_to(marker)
+                FloatImage(photo, bottom=5, left=5).add_to(marker)
             except:
-                st.warning(f"Photo introuvable : {photo_path}")
+                st.warning(f"Photo introuvable: {photo}")
 
-# --- Ajouter les vannes ---
+# --- 3. Ajouter les VANNES ---
 for vanne_id, vanne in DATA_VANNES.items():
     popup_content = create_popup_content(vanne, "vanne")
-
     folium.Marker(
         location=[vanne["lat"], vanne["lon"]],
-        icon=folium.Icon(color="green", icon="fa-solid fa-faucet", prefix="fa"),
+        icon=folium.Icon(color="green", icon="fa-faucet", prefix="fa"),
         tooltip=f"Vanne {vanne_id}"
     ).add_child(folium.Popup(popup_content, max_width=300)).add_to(m)
 
-    # Ajouter les photos (si elles existent)
-    if "photos" in vanne:
-        for photo_path in vanne["photos"]:
-            try:
-                FloatImage(photo_path, bottom=5, left=5).add_to(m)
-            except:
-                st.warning(f"Photo introuvable : {photo_path}")
-
-# --- Relier les bornes aux vannes ---
+# --- 4. Relier bornes et vannes ---
 for borne_id, borne in DATA_BORNES.items():
     for vanne_id in borne.get("vannes_associées", []):
         if vanne_id in DATA_VANNES:
@@ -229,9 +222,10 @@ for borne_id, borne in DATA_BORNES.items():
                 ],
                 color="blue",
                 weight=2,
-                dash_array="5, 5"  # Ligne pointillée
+                dash_array="5,5"
             ).add_to(m)
 
-# ====================== 4. AFFICHAGE DANS STREAMLIT ======================
+# ====================== 4. AFFICHAGE ======================
+st.set_page_config(layout="wide", page_title="Irrigation - Domaine Viticole", page_icon="💧")
 st.title("💧 Gestion de l'Irrigation")
-st_folium(m, width=800, height=600)
+st_folium(m, width=1200, height=800)
