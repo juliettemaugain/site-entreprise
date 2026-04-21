@@ -1,9 +1,64 @@
 import streamlit as st
-import pandas as pd
 import folium
 from streamlit_folium import st_folium
-from datetime import datetime, date
-import os
+import json
+
+# --- DONNÉES DES PARCELLES (celles que tu as partagées) ---
+DATA_PARCELLES = {
+    "P_00": {"nom": "Syrah Isabelle", "cepage": "Syrah", "surface": 0.56, "annee": 2019, "lat": 43.4290, "lon": 3.0930, "taille": "Palmette", "objectif": "Rosé premium", "irrigation": "Goutte à goutte", "geometry": {"type": "Polygon", "coordinates": [[[3.092493, 43.429614], [3.092055, 43.428946], [3.093490, 43.428517], [3.093604, 43.428660], [3.093541, 43.428766], [3.093464, 43.428844], [3.093363, 43.428914], [3.093242, 43.428914], [3.093128, 43.428932], [3.092595, 43.429582], [3.092493, 43.429614]]]}},
+    # ... (le reste de tes données DATA_PARCELLES)
+}
+
+# --- FONCTION POUR CRÉER LA CARTE ---
+def create_map():
+    # Centre de la carte (coordonnées moyennes de tes parcelles)
+    center_lat = sum(p["lat"] for p in DATA_PARCELLES.values()) / len(DATA_PARCELLES)
+    center_lon = sum(p["lon"] for p in DATA_PARCELLES.values()) / len(DATA_PARCELLES)
+    m = folium.Map(location=[center_lat, center_lon], zoom_start=14)
+
+    # --- AJOUTER LES PARCELLES ---
+    for parcelle_id, parcelle in DATA_PARCELLES.items():
+        # Créer un GeoJSON pour la parcelle
+        geojson = {
+            "type": "Feature",
+            "properties": {
+                "id": parcelle_id,
+                "nom": parcelle["nom"],
+                "cépage": parcelle["cepage"],
+                "surface": f"{parcelle['surface']} ha",
+                "année": parcelle["annee"],
+                "irrigation": parcelle.get("irrigation", "Non spécifié")
+            },
+            "geometry": parcelle["geometry"]
+        }
+
+        # Ajouter la parcelle à la carte
+        folium.GeoJson(
+            geojson,
+            style_function=lambda x: {
+                "fillColor": "#808080",  # Gris transparent
+                "color": "#404040",       # Bordure gris foncé
+                "weight": 1,
+                "fillOpacity": 0.5
+            },
+            tooltip=folium.GeoJsonTooltip(
+                fields=["nom", "cépage", "surface", "année", "irrigation"],
+                aliases=["Parcelle:", "Cépage:", "Surface:", "Année de plantation:", "Type d'irrigation:"],
+                localize=True
+            )
+        ).add_to(m)
+
+    return m
+
+# --- AFFICHAGE DANS STREAMLIT ---
+st.title("🌍 Carte des parcelles viticoles")
+
+# Créer et afficher la carte
+m = create_map()
+st_folium(m, height=600, use_container_width=True)
+
+st.success("✅ Parcelles affichées avec succès !")
+
 
 # --- CONFIGURATION DE LA PAGE ---
 st.set_page_config(layout="wide", page_title="Irrigation - Domaine Viticole", page_icon="💧")
@@ -123,8 +178,8 @@ def generate_irrigation_map():
     # Coordonnées estimées des vannes (à ajuster avec tes données GPS réelles)
     VANNES = {
         # Vannes liées à la Borne A
-        "A1": {"coords": [43.4268, 3.0912], "borne": "Borne A", "parcelles": ["Syrah Isabelle"]},
-        "A2": {"coords": [43.4270, 3.0915], "borne": "Borne A", "parcelles": ["Olivette"]},
+        "A1": {"coords": [43.4268, 3.0912], "A1": "Borne A", "parcelles": ["Roumanissas Grenache"]},
+        "A2": {"coords": [43.4270, 3.0915], "A2": "Borne A", "parcelles": ["Syrah Roumanissas"]},
         "A3": {"coords": [43.4272, 3.0918], "borne": "Borne A", "parcelles": ["Roumanissas"]},
         "A4": {"coords": [43.4274, 3.0920], "borne": "Borne A", "parcelles": ["Nouveau plantier Syrah"]},
         "A5": {"coords": [43.4276, 3.0922], "borne": "Borne A", "parcelles": ["Plantier"]},
