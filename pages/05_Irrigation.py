@@ -180,6 +180,7 @@ def create_popup_content(equipement, equipement_type):
         <h4>{equipement['nom']}</h4>
         <b>Débit:</b> {equipement['debit']} m³/h<br>
         <b>Pression:</b> {equipement['pression']} bars<br>
+        <b>Surface:</b> {equipement['hectares']} ha<br>
         <hr>
         {equipement['explications']}
         """
