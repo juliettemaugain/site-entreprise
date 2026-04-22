@@ -26,7 +26,6 @@ st.markdown("""
 st.markdown("<h1 class='title'>Simulateur de rendement viticole 🍷</h1>", unsafe_allow_html=True)
 st.markdown("<p class='title'>Château Cazal Viel</p>", unsafe_allow_html=True)
 
-
 # --- PARAMÈTRES ---
 st.header("Paramètres")
 
@@ -35,9 +34,9 @@ parcelle = st.text_input("Nom de la parcelle")
 # 1. Dictionnaire des cépages et poids
 cepages_data = {
     "Albarino": 170, "Cabernet Franc": 160, "Cabernet Sauvignon": 150,
-    "Carignan": 250, "Chardonnay": 190, "Cinsault": 300, 
-    "Colombard": 190, "Grenache blanc": 250, "Grenache noir": 260, 
-    "Marselan": 140, "Merlot": 190, "Mourvèdre": 210, 
+    "Carignan": 250, "Chardonnay": 190, "Cinsault": 300,
+    "Colombard": 190, "Grenache blanc": 250, "Grenache noir": 260,
+    "Marselan": 140, "Merlot": 190, "Mourvèdre": 210,
     "Roussanne": 160, "Sauvignon Blanc": 150, "Syrah": 150, "Viognier": 210
 }
 
@@ -49,15 +48,12 @@ choix_cepage = st.selectbox("Cépage", liste_noms)
 
 # 3. Logique pour gérer le choix
 if choix_cepage == "Autre (Saisie manuelle)":
-    # Si c'est Autre, on demande le nom et on ne met pas de poids par défaut
     cepage_nom_final = st.text_input("Nom du cépage personnalisé", "Nouveau Cépage")
     poids_defaut = 0.0
 else:
-    # Si c'est un cépage connu, on prend son poids
     cepage_nom_final = choix_cepage
     poids_defaut = float(cepages_data[choix_cepage])
 
-# Le poids est modifiable dans tous les cas
 poids_grappe_g = st.number_input("Poids moyen d'une grappe (g)", value=poids_defaut, step=1.0)
 coef_vinif = st.number_input("Coefficient de vinification (kg/hl)", value=150)
 
@@ -69,25 +65,35 @@ if mode_pieds == "Saisie directe":
 else:
     interrang = st.number_input("Inter-rang (m)", min_value=0.5, value=2.5)
     intercep = st.number_input("Inter-pied (m)", min_value=0.3, value=1.0)
-    # Protection contre la division par zéro
     if interrang > 0 and intercep > 0:
         nb_pieds = round(10000 / (interrang * intercep))
     else:
         nb_pieds = 0
     st.markdown(f"**Pieds/ha calculés : {nb_pieds}**")
 
-
-# --- NOMBRE DE GRAPPES (C'est ici qu'il y avait l'erreur de doublon) ---
+# --- NOMBRE DE GRAPPES ---
 st.subheader("Nombre de grappes par pied")
-methode = st.radio("Méthode de saisie :", ["Tableau Excel (40 pieds)", "Moyenne directe"])
+methode = st.radio("Méthode de saisie :", ["Tableau Excel (nombre variable de pieds)", "Moyenne directe"])
 
 moyenne_grappes = 0.0
 
-if methode == "Tableau Excel (40 pieds)":
-    # Le tableau Excel
-    default_data = {"Pied": list(range(1, 41)), "Nombre de grappes": [0]*40}
+if methode == "Tableau Excel (nombre variable de pieds)":
+    # Sélection du nombre d'observations
+    nb_observations = st.number_input(
+        "Nombre d'observations (pieds à compter)",
+        min_value=1,
+        max_value=100,
+        value=40,
+        step=1
+    )
+
+    # Création du tableau dynamique
+    default_data = {
+        "Pied": list(range(1, nb_observations + 1)),
+        "Nombre de grappes": [0] * nb_observations
+    }
     df_input = pd.DataFrame(default_data)
-    
+
     edited_df = st.data_editor(
         df_input,
         use_container_width=True,
@@ -106,11 +112,10 @@ if methode == "Tableau Excel (40 pieds)":
     st.markdown(f"**Moyenne calculée : {moyenne_grappes:.2f} grappes/pied**")
 
 else:
-    # La saisie directe (Si on ne veut pas utiliser le tableau)
     moyenne_grappes = st.number_input(
-        "Saisir la moyenne de grappes par pied", 
-        min_value=0.0, 
-        value=0.0, 
+        "Saisir la moyenne de grappes par pied",
+        min_value=0.0,
+        value=0.0,
         step=0.1,
         format="%.2f"
     )
@@ -138,11 +143,10 @@ pertes = st.number_input(
 st.subheader("Résultats")
 if st.button("Calculer le rendement"):
     poids_kg = poids_grappe_g / 1000
-    
+
     # Calculs
     rendement_t_ha = nb_pieds * moyenne_grappes * poids_kg * (1 - manquants/100) * (1 - pertes/100) / 1000
-    
-    # Protection division par zéro pour le coef vinif
+
     if coef_vinif > 0:
         rendement_hl_ha = nb_pieds * moyenne_grappes * poids_kg * (1 - manquants/100) * (1 - pertes/100) / coef_vinif
     else:
@@ -160,7 +164,7 @@ if st.button("Calculer le rendement"):
         "t/ha": round(rendement_t_ha, 2),
         "hl/ha": round(rendement_hl_ha, 2)
     }
-    
+
     st.markdown("### 📊 Résultats du calcul")
     with st.expander("Voir les détails", expanded=True):
         st.success(
