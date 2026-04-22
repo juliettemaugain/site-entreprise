@@ -223,7 +223,6 @@ def get_image_html(image_path):
     """Transforme une image locale en code lisible par la carte"""
     # On vérifie si l'image est bien là
     if not os.path.exists(image_path):
-        # Si elle n'y est pas, ça affichera ce texte en rouge sur la carte !
         return f'<p style="color:red;"><b>ATTENTION:</b> Impossible de trouver l\'image : <i>{image_path}</i></p>'
         
     try:
@@ -250,7 +249,7 @@ def create_popup_content(equipement, equipement_type):
         {equipement.get('explications', '')}
         """
         
-     elif equipement_type == "vannes_groupees":
+    elif equipement_type == "vannes_groupees":
         # On cherche si au moins une des vannes du groupe a une photo
         photo_html = ""
         for v in equipement:
