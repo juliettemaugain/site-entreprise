@@ -183,8 +183,8 @@ DATA_VANNES = {
     "C6": {"nom": "Vanne C6", "lat": 43.428000, "lon": 3.086778, "parcelles_associées": ["La Plaine"], "ha": 2.05, "borne_associée": "B_C"},
     "C7": {"nom": "Vanne C7", "lat": 43.426528, "lon": 3.087889, "parcelles_associées": ["Trompet"], "ha": 1.81, "borne_associée": "B_C"},
 
-    "D1": {"nom": "Vanne D1", "lat": 43.426361, "lon": 3.093750, "parcelles_associées": ["Saigne"], "ha": 1.35, "borne_associée": "B_D"},
-    "D2": {"nom": "Vanne D2", "lat": 43.425833, "lon": 3.093028, "parcelles_associées": ["Saigne"], "ha": 1.35, "borne_associée": "B_D"},
+    "D1": {"nom": "Vanne D1", "lat": 43.426361, "lon": 3.093750, "parcelles_associées": ["Saigne"], "ha": 1.35, "borne_associée": "B_D", "photo": "pages/images/saigne1.jpg"},
+    "D2": {"nom": "Vanne D2", "lat": 43.425833, "lon": 3.093028, "parcelles_associées": ["Saigne"], "ha": 1.35, "borne_associée": "B_D", "photo": "pages/images/saigne2.jpg"},
     "D3": {"nom": "Vanne D3", "lat": 43.424306, "lon": 3.095139, "parcelles_associées": ["arraché"], "ha": 0, "borne_associée": "B_D"},
     "D4": {"nom": "Vanne D4", "lat": 43.424306, "lon": 3.095139, "parcelles_associées": ["Phylloxera"], "ha": 2.12, "borne_associée": "B_D"},
     "D5": {"nom": "Vanne D5", "lat": 43.422917, "lon": 3.095611, "parcelles_associées": ["Vio source Ro"], "ha": 0.59, "borne_associée": "B_D"},
