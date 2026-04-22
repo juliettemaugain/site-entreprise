@@ -287,71 +287,73 @@ def add_parcelle_to_map(m, parcelle_id, parcelle):
         tooltip=f"{parcelle['nom']} ({parcelle['cepage']}) - {parcelle['surface']} ha"
     ).add_to(m)
 
-# ====================== 3. CRÉATION DE LA CARTE ======================
-# Calcul du centre en utilisant 'coords' pour les BORNES
-center_lat = sum(b["coords"][0] for b in DATA_BORNES.values()) / len(DATA_BORNES)
-center_lon = sum(b["coords"][1] for b in DATA_BORNES.values()) / len(DATA_BORNES)
+# ====================== 3. CRÉATION DE LA CARTE (AVEC MÉMOIRE) ======================
 
-m = folium.Map(
-    location=[center_lat, center_lon],
-    zoom_start=15,
-    tiles="https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}",
-    attr='Tiles &copy; Esri'
-)
+@st.cache_resource
+def generer_carte():
+    # Calcul du centre de la carte
+    center_lat = sum(b["coords"][0] for b in DATA_BORNES.values()) / len(DATA_BORNES)
+    center_lon = sum(b["coords"][1] for b in DATA_BORNES.values()) / len(DATA_BORNES)
 
-# --- 1. Ajouter les PARCELLES ---
-for parcelle_id, parcelle in DATA_PARCELLES.items():
-    add_parcelle_to_map(m, parcelle_id, parcelle)
+    carte = folium.Map(
+        location=[center_lat, center_lon],
+        zoom_start=15,
+        tiles="https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}",
+        attr='Tiles &copy; Esri'
+    )
 
-# --- 2. Ajouter les BORNES (CORRIGÉ avec coords[0] et coords[1]) ---
-for borne_id, borne in DATA_BORNES.items():
-    popup_content = create_popup_content(borne, "borne")
-    folium.Marker(
-        location=[borne["coords"][0], borne["coords"][1]], 
-        icon=folium.Icon(color="blue", icon="tint", prefix="fa"),
-        tooltip=f"Borne {borne_id}"
-    ).add_child(folium.Popup(popup_content, max_width=300)).add_to(m)
+    # --- 1. Ajouter les PARCELLES ---
+    for parcelle_id, parcelle in DATA_PARCELLES.items():
+        add_parcelle_to_map(carte, parcelle_id, parcelle)
 
-# --- 3. Ajouter les VANNES ---
-# --- 3. Ajouter les VANNES (Regroupées par coordonnées) ---
-vannes_par_coords = {}
+    # --- 2. Ajouter les BORNES ---
+    for borne_id, borne in DATA_BORNES.items():
+        popup_content = create_popup_content(borne, "borne")
+        folium.Marker(
+            location=[borne["coords"][0], borne["coords"][1]], 
+            icon=folium.Icon(color="blue", icon="tint", prefix="fa"),
+            tooltip=f"Borne {borne_id}"
+        ).add_child(folium.Popup(popup_content, max_width=300)).add_to(carte)
 
-# On trie les vannes selon leurs coordonnées GPS
-for vanne_id, vanne in DATA_VANNES.items():
-    coords = (vanne["lat"], vanne["lon"])
-    if coords not in vannes_par_coords:
-        vannes_par_coords[coords] = []
-    vannes_par_coords[coords].append(vanne)
+    # --- 3. Ajouter les VANNES ---
+    vannes_par_coords = {}
+    for vanne_id, vanne in DATA_VANNES.items():
+        coords = (vanne["lat"], vanne["lon"])
+        if coords not in vannes_par_coords:
+            vannes_par_coords[coords] = []
+        vannes_par_coords[coords].append(vanne)
 
-# On affiche un seul marqueur par groupe de coordonnées
-for coords, liste_vannes in vannes_par_coords.items():
-    popup_content = create_popup_content(liste_vannes, "vannes_groupees")
-    
-    # Le texte au survol de la souris
-    noms_vannes = ", ".join([v["nom"] for v in liste_vannes])
-    tooltip_text = f"{len(liste_vannes)} Vanne(s) : {noms_vannes}"
-    
-    folium.Marker(
-        location=[coords[0], coords[1]],
-        icon=folium.Icon(color="green", icon="fa-faucet", prefix="fa"),
-        tooltip=tooltip_text
-    ).add_child(folium.Popup(popup_content, max_width=350)).add_to(m)
+    for coords, liste_vannes in vannes_par_coords.items():
+        popup_content = create_popup_content(liste_vannes, "vannes_groupees")
+        noms_vannes = ", ".join([v["nom"] for v in liste_vannes])
+        tooltip_text = f"{len(liste_vannes)} Vanne(s) : {noms_vannes}"
+        
+        folium.Marker(
+            location=[coords[0], coords[1]],
+            icon=folium.Icon(color="green", icon="fa-faucet", prefix="fa"),
+            tooltip=tooltip_text
+        ).add_child(folium.Popup(popup_content, max_width=350)).add_to(carte)
 
+    # --- 4. Relier bornes et vannes ---
+    for borne_id, borne in DATA_BORNES.items():
+        for vanne_id in borne.get("vannes_associées", []):
+            if vanne_id in DATA_VANNES:
+                folium.PolyLine(
+                    locations=[
+                        [borne["coords"][0], borne["coords"][1]],
+                        [DATA_VANNES[vanne_id]["lat"], DATA_VANNES[vanne_id]["lon"]]
+                    ],
+                    color="blue",
+                    weight=2,
+                    dash_array="5,5"
+                ).add_to(carte)
+                
+    return carte
 
-# --- 4. Relier bornes et vannes (CORRIGÉ avec coords[0] et coords[1]) ---
-for borne_id, borne in DATA_BORNES.items():
-    for vanne_id in borne.get("vannes_associées", []):
-        if vanne_id in DATA_VANNES:
-            folium.PolyLine(
-                locations=[
-                    [borne["coords"][0], borne["coords"][1]],
-                    [DATA_VANNES[vanne_id]["lat"], DATA_VANNES[vanne_id]["lon"]]
-                ],
-                color="blue",
-                weight=2,
-                dash_array="5,5"
-            ).add_to(m)
+# On génère la carte une seule fois et on la garde en mémoire !
+m = generer_carte()
 
 # ====================== 4. AFFICHAGE ======================
 st.title("💧 Gestion de l'Irrigation")
 st_folium(m, width=1200, height=800, returned_objects=[])
+
