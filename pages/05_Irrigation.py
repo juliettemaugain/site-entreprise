@@ -252,14 +252,7 @@ for borne_id, borne in DATA_BORNES.items():
 
     marker.get_root().html.add_child(folium.Element(popup_content))
 
-    # Photos
-    if "photos" in borne:
-        for photo in borne["photos"]:
-            try:
-                FloatImage(photo, bottom=5, left=5).add_to(marker)
-            except:
-                st.warning(f"Photo introuvable: {photo}")
-
+   
 # --- 3. Ajouter les VANNES ---
 for vanne_id, vanne in DATA_VANNES.items():
     popup_content = create_popup_content(vanne, "vanne")
