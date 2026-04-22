@@ -189,6 +189,7 @@ DATA_VANNES = {
     "D4": {"nom": "Vanne D4", "lat": 43.424306, "lon": 3.095139, "parcelles_associées": ["Phylloxera"], "ha": 2.12, "borne_associée": "B_D"},
     "D5": {"nom": "Vanne D5", "lat": 43.422917, "lon": 3.095611, "parcelles_associées": ["Vio source Ro"], "ha": 0.59, "borne_associée": "B_D"},
     "D6": {"nom": "Vanne D6", "lat": 43.421417, "lon": 3.095222, "parcelles_associées": ["Syrah Coural"], "ha": 0.79, "borne_associée": "B_D", "photo": "images/vannes_azalet.jpg"},
+    "D7": {"nom": "Vanne D7", "lat": 43.424972, "lon": 3.093083, "parcelles_associées": ["?"], "ha": 0, "borne_associée": "B_D"},
     "D8": {"nom": "Vanne D8", "lat": 43.427250, "lon": 3.093722, "parcelles_associées": ["Vio Jardin"], "ha": 0.86, "borne_associée": "B_D"},
     "D9": {"nom": "Vanne D9", "lat": 43.422917, "lon": 3.095611, "parcelles_associées": ["Alba coural pe"], "ha": 0.12, "borne_associée": "B_D"},
     "D10": {"nom": "Vanne D10", "lat": 43.421194, "lon": 3.097028, "parcelles_associées": ["Alba Coural"], "ha": 0.9, "borne_associée": "B_D"},
