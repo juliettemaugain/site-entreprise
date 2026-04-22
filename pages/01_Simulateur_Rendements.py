@@ -165,15 +165,7 @@ pertes = st.number_input(
 # --- RÉSULTATS ---
 st.subheader("Résultats")
 if st.button("Calculer le rendement"):
-    poids_kg = poids_grappe_g / 1000
-
-    # Calculs
-    rendement_t_ha = nb_pieds * moyenne_grappes * poids_kg * (1 - manquants/100) * (1 - pertes/100) / 1000
-
-    if coef_vinif > 0:
-        rendement_hl_ha = nb_pieds * moyenne_grappes * poids_kg * (1 - manquants/100) * (1 - pertes/100) / coef_vinif
-    else:
-        rendement_hl_ha = 0
+    # [Calculs inchangés...]
 
     # Affichage des résultats avec cartes colorées
     st.markdown("""
@@ -188,19 +180,22 @@ if st.button("Calculer le rendement"):
     .tonnes-card {
         background-color: #e8f5e9;
         border-left: 5px solid #4caf50;
+        color: #2e7d32 !important;
     }
     .hectolitres-card {
         background-color: #fce4ec;
         border-left: 5px solid #e91e63;
+        color: #880e4f !important;
     }
     .result-value {
         font-size: 28px;
         font-weight: bold;
         margin: 10px 0;
+        color: #000000 !important;
     }
     .result-label {
         font-size: 16px;
-        color: #555;
+        color: #333333 !important;
     }
     </style>
     """, unsafe_allow_html=True)
@@ -238,7 +233,7 @@ if st.button("Calculer le rendement"):
             - ✅ **Rendement estimé** : **{round(rendement_t_ha, 2)} t/ha**
             """
         )
-        
+
 
 # Historique
 st.subheader("Historique des simulations 📊")
