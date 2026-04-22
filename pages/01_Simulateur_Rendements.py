@@ -5,6 +5,9 @@ import io
 
 st.set_page_config(page_title="Simulateur de rendements viticoles", page_icon="🍷")
 
+if "historique" not in st.session_state:
+    st.session_state.historique = []
+
 # Appliquer un style CSS global avec police Lato
 st.markdown("""
     <style>
@@ -207,6 +210,18 @@ if st.button("Calculer le rendement"):
     else:
         rendement_hl_ha = 0
 
+    # Ajout du résultat à l'historique
+    nouveau_resultat = {
+        "Date": datetime.now().strftime("%Y-%m-%d %H:%M"),
+        "Parcelle": parcelle or "Non précisé",
+        "Cépage": cepage_nom_final,
+        "Grappes/pied": round(moyenne_grappes, 2),
+        "Poids grappe (g)": poids_grappe_g,
+        "Rendement (t/ha)": round(rendement_t_ha, 2),
+        "Rendement (hl/ha)": round(rendement_hl_ha, 2)
+    }
+    st.session_state.historique.append(nouveau_resultat)
+
     # Affichage des résultats avec cartes colorées
     col1, col2 = st.columns(2)
     with col1:
@@ -255,3 +270,4 @@ if "historique" in st.session_state and st.session_state.historique:
         st.session_state.historique = []
 else:
     st.info("Aucune simulation pour le moment.")
+
