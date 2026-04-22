@@ -164,12 +164,10 @@ pertes = st.number_input(
 
 # --- RÉSULTATS ---
 st.subheader("Résultats")
-if st.button("Calculer le rendement"):
-    # [Calculs inchangés...]
 
-    # Affichage des résultats avec cartes colorées
-    st.markdown("""
-    <style>
+# D'abord on définit le CSS dans un composant séparé
+st.markdown("""
+<style>
     .result-card {
         border-radius: 10px;
         padding: 20px;
@@ -178,28 +176,38 @@ if st.button("Calculer le rendement"):
         text-align: center;
     }
     .tonnes-card {
-        background-color: #e8f5e9;
-        border-left: 5px solid #4caf50;
-        color: #2e7d32 !important;
+        background-color: #e8f5e9 !important;
+        border-left: 5px solid #4caf50 !important;
     }
     .hectolitres-card {
-        background-color: #fce4ec;
-        border-left: 5px solid #e91e63;
-        color: #880e4f !important;
+        background-color: #fce4ec !important;
+        border-left: 5px solid #e91e63 !important;
     }
     .result-value {
-        font-size: 28px;
-        font-weight: bold;
-        margin: 10px 0;
+        font-size: 28px !important;
+        font-weight: bold !important;
+        margin: 10px 0 !important;
         color: #000000 !important;
     }
     .result-label {
-        font-size: 16px;
+        font-size: 16px !important;
         color: #333333 !important;
     }
-    </style>
-    """, unsafe_allow_html=True)
+</style>
+""", unsafe_allow_html=True)
 
+if st.button("Calculer le rendement"):
+    poids_kg = poids_grappe_g / 1000
+
+    # Calculs
+    rendement_t_ha = nb_pieds * moyenne_grappes * poids_kg * (1 - manquants/100) * (1 - pertes/100) / 1000
+
+    if coef_vinif > 0:
+        rendement_hl_ha = nb_pieds * moyenne_grappes * poids_kg * (1 - manquants/100) * (1 - pertes/100) / coef_vinif
+    else:
+        rendement_hl_ha = 0
+
+    # Affichage des résultats avec cartes colorées
     col1, col2 = st.columns(2)
     with col1:
         st.markdown(f"""
@@ -233,7 +241,6 @@ if st.button("Calculer le rendement"):
             - ✅ **Rendement estimé** : **{round(rendement_t_ha, 2)} t/ha**
             """
         )
-
 
 # Historique
 st.subheader("Historique des simulations 📊")
