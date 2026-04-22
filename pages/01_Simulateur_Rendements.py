@@ -228,31 +228,6 @@ if st.button("Calculer le rendement"):
 st.subheader("Historique des simulations 📊")
 if "historique" in st.session_state and st.session_state.historique:
     df = pd.DataFrame(st.session_state.historique)
-
-    # Bouton pour télécharger le CSV
-    csv = df.to_csv(index=False).encode('utf-8')
-    st.download_button(
-        label="📥 Télécharger le tableau (CSV)",
-        data=csv,
-        file_name='historique_rendements.csv',
-        mime='text/csv',
-        key='download-csv'
-    )
-
-    # Solution alternative pour copier sans JavaScript
-    st.markdown("### Copier le tableau")
-
-    # Afficher le tableau en texte brut dans un expander
-    with st.expander("Voir le texte à copier"):
-        # Convertir le DataFrame en texte tabulé
-        table_text = df.to_csv(sep='\t', index=False)
-        st.text_area(
-            "Copiez ce texte (Ctrl+A puis Ctrl+C)",
-            value=table_text,
-            height=200,
-            key="copy_text_area"
-        )
-
     st.dataframe(df)
 
     col1, col2 = st.columns(2)
@@ -262,4 +237,3 @@ if "historique" in st.session_state and st.session_state.historique:
         st.session_state.historique = []
 else:
     st.info("Aucune simulation pour le moment.")
-    
