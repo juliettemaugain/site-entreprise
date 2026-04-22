@@ -1,8 +1,7 @@
 import streamlit as st
 import pandas as pd
 from datetime import datetime
-import pyperclip  # Pour copier dans le presse-papiers
-import io  # Pour générer le CSV
+import io
 
 st.set_page_config(page_title="Simulateur de rendements viticoles", page_icon="🍷")
 
@@ -36,18 +35,14 @@ st.markdown("""
         color: #666;
         text-align: center;
     }
-    .copy-button {
-        background-color: #4CAF50;
-        color: white;
-        border: none;
-        padding: 8px 16px;
-        text-align: center;
-        text-decoration: none;
-        display: inline-block;
-        font-size: 14px;
-        margin: 4px 2px;
-        cursor: pointer;
-        border-radius: 4px;
+    .copy-container {
+        position: relative;
+    }
+    .copy-textarea {
+        position: absolute;
+        left: -9999px;
+        height: 0;
+        width: 0;
     }
     </style>
 """, unsafe_allow_html=True)
@@ -234,23 +229,64 @@ st.subheader("Historique des simulations 📊")
 if "historique" in st.session_state and st.session_state.historique:
     df = pd.DataFrame(st.session_state.historique)
 
-    # Bouton pour copier le tableau
+    # Bouton pour télécharger le CSV
     csv = df.to_csv(index=False).encode('utf-8')
     st.download_button(
-        label="📋 Copier le tableau (CSV)",
+        label="📥 Télécharger le tableau (CSV)",
         data=csv,
         file_name='historique_rendements.csv',
         mime='text/csv',
         key='download-csv'
     )
 
-    # Bouton pour copier dans le presse-papiers
-    if st.button("📋 Copier dans le presse-papiers"):
-        try:
-            pyperclip.copy(df.to_csv(index=False))
-            st.success("Tableau copié dans le presse-papiers !")
-        except:
-            st.warning("Impossible de copier automatiquement. Utilisez le bouton de téléchargement CSV.")
+    # Solution alternative pour copier sans pyperclip
+    st.markdown("### Copier le tableau")
+    st.markdown("""
+    <div class="copy-container">
+        <textarea class="copy-textarea" id="copyTable"></textarea>
+        <button onclick="copyToClipboard()" class="copy-button">📋 Copier dans le presse-papiers</button>
+    </div>
+
+    <script>
+    function copyToClipboard() {
+        // Convertir le tableau en texte
+        const table = document.querySelector('.stDataFrame');
+        let text = '';
+
+        // Récupérer les en-têtes
+        const headers = table.querySelectorAll('thead th');
+        let headerText = [];
+        headers.forEach(header => {
+            headerText.push(header.textContent);
+        });
+        text += headerText.join('\t') + '\n';
+
+        // Récupérer les données
+        const rows = table.querySelectorAll('tbody tr');
+        rows.forEach(row => {
+            const cells = row.querySelectorAll('td');
+            let rowText = [];
+            cells.forEach(cell => {
+                rowText.push(cell.textContent);
+            });
+            text += rowText.join('\t') + '\n';
+        });
+
+        // Copier dans le presse-papiers
+        const textarea = document.getElementById('copyTable');
+        textarea.value = text;
+        textarea.select();
+        document.execCommand('copy');
+
+        // Afficher un message de confirmation
+        const button = event.target;
+        button.textContent = '✅ Copié !';
+        setTimeout(() => {
+            button.textContent = '📋 Copier dans le presse-papiers';
+        }, 2000);
+    }
+    </script>
+    """, unsafe_allow_html=True)
 
     st.dataframe(df)
 
@@ -261,3 +297,4 @@ if "historique" in st.session_state and st.session_state.historique:
         st.session_state.historique = []
 else:
     st.info("Aucune simulation pour le moment.")
+    
