@@ -175,20 +175,55 @@ if st.button("Calculer le rendement"):
     else:
         rendement_hl_ha = 0
 
-    result = {
-        "Date": datetime.now().strftime("%Y-%m-%d %H:%M"),
-        "Parcelle": parcelle,
-        "Cépage": cepage_nom_final,
-        "Poids grappe (g)": poids_grappe_g,
-        "Grappes/pied": round(moyenne_grappes, 2),
-        "Pieds/ha": nb_pieds,
-        "% manquants": manquants,
-        "% pertes": pertes,
-        "t/ha": round(rendement_t_ha, 2),
-        "hl/ha": round(rendement_hl_ha, 2)
+    # Affichage des résultats avec cartes colorées
+    st.markdown("""
+    <style>
+    .result-card {
+        border-radius: 10px;
+        padding: 20px;
+        margin: 15px 0;
+        box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+        text-align: center;
     }
+    .tonnes-card {
+        background-color: #e8f5e9;
+        border-left: 5px solid #4caf50;
+    }
+    .hectolitres-card {
+        background-color: #fce4ec;
+        border-left: 5px solid #e91e63;
+    }
+    .result-value {
+        font-size: 28px;
+        font-weight: bold;
+        margin: 10px 0;
+    }
+    .result-label {
+        font-size: 16px;
+        color: #555;
+    }
+    </style>
+    """, unsafe_allow_html=True)
 
-    st.markdown("### 📊 Résultats du calcul")
+    col1, col2 = st.columns(2)
+    with col1:
+        st.markdown(f"""
+        <div class="result-card tonnes-card">
+            <div class="result-value">{round(rendement_t_ha, 2)} t/ha</div>
+            <div class="result-label">Rendement en tonnes</div>
+        </div>
+        """, unsafe_allow_html=True)
+
+    with col2:
+        st.markdown(f"""
+        <div class="result-card hectolitres-card">
+            <div class="result-value">{round(rendement_hl_ha, 2)} hl/ha</div>
+            <div class="result-label">Rendement en hectolitres</div>
+        </div>
+        """, unsafe_allow_html=True)
+
+    # Détails du calcul
+    st.markdown("### 📊 Détails du calcul")
     with st.expander("Voir les détails", expanded=True):
         st.success(
             f"""
@@ -199,30 +234,11 @@ if st.button("Calculer le rendement"):
             - **Pieds/ha** : {nb_pieds}
             - **Manquants** : {manquants} %
             - **Pertes** : {pertes} %
+            ---
+            - ✅ **Rendement estimé** : **{round(rendement_t_ha, 2)} t/ha**
             """
         )
-
-        # Affichage des résultats principaux dans des cartes
-        col1, col2 = st.columns(2)
-        with col1:
-            st.markdown(f"""
-            <div class="result-card">
-                <div class="result-highlight">{round(rendement_t_ha, 2)} t/ha</div>
-                <div class="result-label">Rendement estimé</div>
-            </div>
-            """, unsafe_allow_html=True)
-
-        with col2:
-            st.markdown(f"""
-            <div class="result-card">
-                <div class="result-highlight">{round(rendement_hl_ha, 2)} hl/ha</div>
-                <div class="result-label">Rendement vin estimé</div>
-            </div>
-            """, unsafe_allow_html=True)
-
-    if "historique" not in st.session_state:
-        st.session_state.historique = []
-    st.session_state.historique.append(result)
+        
 
 # Historique
 st.subheader("Historique des simulations 📊")
