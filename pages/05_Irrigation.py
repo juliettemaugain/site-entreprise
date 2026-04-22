@@ -1,9 +1,13 @@
 import streamlit as st
 import folium
 from streamlit_folium import st_folium
-import json
 
-# --- DONNÉES DES PARCELLES (celles que tu as partagées) ---
+# ====================== 0. CONFIGURATION DE LA PAGE ======================
+st.set_page_config(layout="wide", page_title="Irrigation - Domaine Viticole", page_icon="💧")
+
+# ====================== 1. DONNÉES ======================
+
+# --- DONNÉES DES PARCELLES ---
 DATA_PARCELLES = {
     "P_00": {"nom": "Syrah Isabelle", "cepage": "Syrah", "surface": 0.56, "annee": 2019, "lat": 43.4290, "lon": 3.0930, "taille": "Palmette", "objectif": "Rosé premium", "irrigation": "Goutte à goutte", "geometry": {"type": "Polygon", "coordinates": [[[3.092493, 43.429614], [3.092055, 43.428946], [3.093490, 43.428517], [3.093604, 43.428660], [3.093541, 43.428766], [3.093464, 43.428844], [3.093363, 43.428914], [3.093242, 43.428914], [3.093128, 43.428932], [3.092595, 43.429582], [3.092493, 43.429614]]]}},
      "P_01": {"nom": "Olivette", "cepage": "Syrah", "surface": 2.57, "annee": 2010, "lat": 43.4278, "lon": 3.0920, "geometry": {"type": "Polygon", "coordinates": [[[3.091501, 43.429019], [3.091162, 43.428491], [3.091705, 43.428113], [3.091867, 43.428020], [3.091113, 43.426822], [3.091776, 43.426797], [3.092495, 43.426894], [3.092798, 43.427365], [3.093003, 43.427693], [3.093447, 43.428450], [3.092072, 43.428886], [3.091501, 43.429019]]]}},
@@ -91,23 +95,19 @@ DATA_PARCELLES = {
         "P_83": {"nom": "Petit Grenache", "cepage": "Grenache", "surface": 0.38, "annee": 2000, "lat": 43.4208, "lon": 3.0714, "geometry": {"type": "Polygon", "coordinates": [[[3.071219, 43.421226], [3.070781, 43.420953], [3.070938, 43.420698], [3.071727, 43.420437], [3.071911, 43.420774], [3.071622, 43.421042], [3.071219, 43.421226]]]}},
         "P_84": {"nom": "Grenache Capel", "cepage": "Grenache", "surface": 1.39, "annee": 2000, "lat": 43.4198, "lon": 3.0705, "geometry": {"type": "Polygon", "coordinates": [[[3.070682, 43.420738], [3.069403, 43.419892], [3.070051, 43.419497], [3.069823, 43.418981], [3.070244, 43.418867], [3.070674, 43.419643], [3.071611, 43.420401], [3.071331, 43.420490], [3.071094, 43.420496], [3.070682, 43.420738]]]}}
         }# ... 
-
-# --- BORNES ET VANNES (tes données existantes) ---
+# --- BORNES ET VANNES ---
 DATA_BORNES = {
     "B_A": {
         "nom": "Borne A",
         "coords": [43.430944, 3.094250],
         "debit": 25,
-        "pression": 3.5,  # À ajuster si tu as cette info
+        "pression": 3.5,
         "hectares": 3.5,
-        "parcelles": [
-            "Roumanissas", "Nouveau plantier Syrah", "Syrah roumanissas",
-            "Syrah du muscat", "Syrah hébram", "Plantier"
-        ],
+        "parcelles": ["Roumanissas", "Nouveau plantier Syrah", "Syrah roumanissas", "Syrah du muscat", "Syrah hébram", "Plantier"],
         "photos": ["images/bornes/B_A_front.jpg", "images/bornes/B_A_side.jpg"],
         "explications": "Borne principale pour les parcelles Roumanissas et alentours. Débit élevé pour couvrir les 3.5 hectares.",
         "statut": "OK",
-        "vannes_associées": ["A1", "A2", "A3", "A4", "A5", "A6", "A7"]  # À compléter avec tes vannes
+        "vannes_associées": ["A1", "A2", "A3", "A4", "A5", "A6", "A7"]
     },
     "B_B": {
         "nom": "Borne B",
@@ -139,10 +139,7 @@ DATA_BORNES = {
         "debit": 35,
         "pression": 4.0,
         "hectares": 4.9,
-        "parcelles": [
-            "Vio Jardin", "Saigne", "Phylloxera", "Alba Coural",
-            "Syrah Coural", "Vio source Romaine", "Viognier Alazet cabane", "Viognier Alazet"
-        ],
+        "parcelles": ["Vio Jardin", "Saigne", "Phylloxera", "Alba Coural", "Syrah Coural", "Vio source Romaine", "Viognier Alazet cabane", "Viognier Alazet"],
         "photos": ["images/bornes/B_D_front.jpg"],
         "explications": "Borne avec le débit le plus élevé (35 m³/h) pour couvrir 4.9 hectares. Parcelles variées (Viognier, Syrah).",
         "statut": "OK",
@@ -154,10 +151,7 @@ DATA_BORNES = {
         "debit": 20,
         "pression": 3.0,
         "hectares": 2.8,
-        "parcelles": [
-            "Grand Bardou", "Petit Bardou", "Plantier terret",
-            "Brunaude Alba", "La Brunaude", "Plantier Vio Brunaude", "CF Brunaude"
-        ],
+        "parcelles": ["Grand Bardou", "Petit Bardou", "Plantier terret", "Brunaude Alba", "La Brunaude", "Plantier Vio Brunaude", "CF Brunaude"],
         "photos": ["images/bornes/B_K_front.jpg"],
         "explications": "Borne pour les parcelles Bardou et Brunaude. Débit standard pour 2.8 hectares.",
         "statut": "OK",
@@ -202,16 +196,10 @@ def create_popup_content(equipement, equipement_type):
 
 def add_parcelle_to_map(m, parcelle_id, parcelle):
     """Ajoute une parcelle à la carte Folium"""
-    # Couleur selon le cépage
     color_map = {
-        "Syrah": "#8B0000",  # Rouge foncé
-        "Viognier": "#FFD700",  # Or
-        "Grenache": "#FF6347",  # Tomate
-        "Chardonnay": "#F5DEB3",  # Blé
-        "Albarino": "#90EE90",  # Vert clair
-        "Merlot": "#800020",  # Bordeaux
-        "Cinsault": "#FFB6C1",  # Rose clair
-        "Marselan": "#800080"  # Violet
+        "Syrah": "#8B0000", "Viognier": "#FFD700", "Grenache": "#FF6347",
+        "Chardonnay": "#F5DEB3", "Albarino": "#90EE90", "Merlot": "#800020",
+        "Cinsault": "#FFB6C1", "Marselan": "#800080"
     }
 
     folium.GeoJson(
@@ -226,9 +214,9 @@ def add_parcelle_to_map(m, parcelle_id, parcelle):
     ).add_to(m)
 
 # ====================== 3. CRÉATION DE LA CARTE ======================
-# Calcul du centre (moyenne des bornes)
-center_lat = sum(b["lat"] for b in DATA_BORNES.values()) / len(DATA_BORNES)
-center_lon = sum(b["lon"] for b in DATA_BORNES.values()) / len(DATA_BORNES)
+# Calcul du centre en utilisant 'coords' pour les BORNES
+center_lat = sum(b["coords"][0] for b in DATA_BORNES.values()) / len(DATA_BORNES)
+center_lon = sum(b["coords"][1] for b in DATA_BORNES.values()) / len(DATA_BORNES)
 
 m = folium.Map(
     location=[center_lat, center_lon],
@@ -237,22 +225,19 @@ m = folium.Map(
     attr='Tiles &copy; Esri'
 )
 
-# --- 1. Ajouter les PARCELLES en premier ---
+# --- 1. Ajouter les PARCELLES ---
 for parcelle_id, parcelle in DATA_PARCELLES.items():
     add_parcelle_to_map(m, parcelle_id, parcelle)
 
-# --- 2. Ajouter les BORNES ---
+# --- 2. Ajouter les BORNES (CORRIGÉ avec coords[0] et coords[1]) ---
 for borne_id, borne in DATA_BORNES.items():
     popup_content = create_popup_content(borne, "borne")
-    marker = folium.Marker(
-        location=[borne["lat"], borne["lon"]],
+    folium.Marker(
+        location=[borne["coords"][0], borne["coords"][1]], 
         icon=folium.Icon(color="blue", icon="tint", prefix="fa"),
         tooltip=f"Borne {borne_id}"
-    ).add_to(m)
+    ).add_child(folium.Popup(popup_content, max_width=300)).add_to(m)
 
-    marker.get_root().html.add_child(folium.Element(popup_content))
-
-   
 # --- 3. Ajouter les VANNES ---
 for vanne_id, vanne in DATA_VANNES.items():
     popup_content = create_popup_content(vanne, "vanne")
@@ -262,13 +247,13 @@ for vanne_id, vanne in DATA_VANNES.items():
         tooltip=f"Vanne {vanne_id}"
     ).add_child(folium.Popup(popup_content, max_width=300)).add_to(m)
 
-# --- 4. Relier bornes et vannes ---
+# --- 4. Relier bornes et vannes (CORRIGÉ avec coords[0] et coords[1]) ---
 for borne_id, borne in DATA_BORNES.items():
     for vanne_id in borne.get("vannes_associées", []):
         if vanne_id in DATA_VANNES:
             folium.PolyLine(
                 locations=[
-                    [borne["lat"], borne["lon"]],
+                    [borne["coords"][0], borne["coords"][1]],
                     [DATA_VANNES[vanne_id]["lat"], DATA_VANNES[vanne_id]["lon"]]
                 ],
                 color="blue",
@@ -277,6 +262,5 @@ for borne_id, borne in DATA_BORNES.items():
             ).add_to(m)
 
 # ====================== 4. AFFICHAGE ======================
-st.set_page_config(layout="wide", page_title="Irrigation - Domaine Viticole", page_icon="💧")
 st.title("💧 Gestion de l'Irrigation")
 st_folium(m, width=1200, height=800)
