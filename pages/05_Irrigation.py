@@ -354,4 +354,4 @@ for borne_id, borne in DATA_BORNES.items():
 
 # ====================== 4. AFFICHAGE ======================
 st.title("💧 Gestion de l'Irrigation")
-st_folium(m, width=1200, height=800)
+st_folium(m, width=1200, height=800, returned_objects=[])
