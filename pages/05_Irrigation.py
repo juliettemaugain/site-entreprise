@@ -1,6 +1,8 @@
 import streamlit as st
 import folium
 from streamlit_folium import st_folium
+import base64
+import os
 
 # ====================== 0. CONFIGURATION DE LA PAGE ======================
 st.set_page_config(layout="wide", page_title="Irrigation - Domaine Viticole", page_icon="💧")
@@ -186,8 +188,7 @@ DATA_VANNES = {
     "D3": {"nom": "Vanne D3", "lat": 43.424306, "lon": 3.095139, "parcelles_associées": ["arraché"], "ha": 0, "borne_associée": "B_D"},
     "D4": {"nom": "Vanne D4", "lat": 43.424306, "lon": 3.095139, "parcelles_associées": ["Phylloxera"], "ha": 2.12, "borne_associée": "B_D"},
     "D5": {"nom": "Vanne D5", "lat": 43.422917, "lon": 3.095611, "parcelles_associées": ["Vio source Ro"], "ha": 0.59, "borne_associée": "B_D"},
-    "D6": {"nom": "Vanne D6", "lat": 43.421417, "lon": 3.095222, "parcelles_associées": ["Syrah Coural"], "ha": 0.79, "borne_associée": "B_D"},
-    "D7": {"nom": "Vanne D7", "lat": 43.424972, "lon": 3.093083, "parcelles_associées": ["?"], "ha": 0, "borne_associée": "B_D"},
+    "D6": {"nom": "Vanne D6", "lat": 43.421417, "lon": 3.094944, "parcelles_associées": ["Syrah Coural"], "ha": 0.79, "borne_associée": "B_D", "photo": "images/vannes_azalet.jpg"},"D7": {"nom": "Vanne D7", "lat": 43.424972, "lon": 3.093083, "parcelles_associées": ["?"], "ha": 0, "borne_associée": "B_D"},
     "D8": {"nom": "Vanne D8", "lat": 43.427250, "lon": 3.093722, "parcelles_associées": ["Vio Jardin"], "ha": 0.86, "borne_associée": "B_D"},
     "D9": {"nom": "Vanne D9", "lat": 43.422917, "lon": 3.095611, "parcelles_associées": ["Alba coural pe"], "ha": 0.12, "borne_associée": "B_D"},
     "D10": {"nom": "Vanne D10", "lat": 43.421194, "lon": 3.097028, "parcelles_associées": ["Alba Coural"], "ha": 0.9, "borne_associée": "B_D"},
@@ -216,30 +217,51 @@ DATA_VANNES = {
 }
 
 # ====================== 2. FONCTIONS UTILITAIRES ======================
+def get_image_html(image_path):
+    """Transforme l'image pour qu'elle s'affiche dans la carte"""
+    if image_path and os.path.exists(image_path):
+        with open(image_path, "rb") as image_file:
+            encoded_string = base64.b64encode(image_file.read()).decode()
+        # On renvoie une balise image HTML avec des bords arrondis et qui prend la largeur de la bulle
+        return f'<img src="data:image/jpeg;base64,{encoded_string}" style="width:100%; border-radius:8px; margin-bottom:10px;">'
+    return ""
+
 def create_popup_content(equipement, equipement_type):
     """Crée le contenu HTML pour les popups"""
     if equipement_type == "borne":
+        # Gestion de la photo de la borne si elle existe
+        photo_html = ""
+        if "photo" in equipement:
+            photo_html = get_image_html(equipement["photo"])
+            
         return f"""
+        {photo_html}
         <h4>{equipement['nom']}</h4>
         <b>Débit:</b> {equipement['debit']} m³/h<br>
         <b>Pression:</b> {equipement['pression']} bars<br>
-        <b>Surface:</b> {equipement['hectares']} ha<br>
-        <b>Parcelles:</b> {equipement['parcelles']} <br>
-    
-        {equipement['explications']}
+        <b>Surface couverte:</b> {equipement['hectares']} ha<br>
+        <hr>
+        {equipement.get('explications', '')}
         """
+        
     elif equipement_type == "vannes_groupees":
-        # 'equipement' est ici une liste de vannes au même endroit
-        html = f"<h4>📍 Regroupement de {len(equipement)} vanne(s)</h4>"
+        # On cherche si au moins une des vannes du groupe a une photo
+        photo_html = ""
+        for v in equipement:
+            if "photo" in v:
+                photo_html = get_image_html(v["photo"])
+                break # On s'arrête à la première photo trouvée pour ce groupe
+                
+        html = f"{photo_html}<h4>📍 Regroupement de {len(equipement)} vanne(s)</h4>"
         for v in equipement:
             parcelles_str = ", ".join(v['parcelles_associées'])
             html += f"<b>{v['nom']}</b> (Reliée à {v['borne_associée']})<br>"
             html += f"🌱 Parcelle(s): {parcelles_str}<br>"
             html += f"📏 Surface: {v.get('ha', 0)} ha<br>"
-            # C'est ici que tu pourras ajouter la balise <img src="..."> plus tard !
             html += "<hr style='margin: 5px 0;'>"
         return html
     return ""
+
 
 def add_parcelle_to_map(m, parcelle_id, parcelle):
     """Ajoute une parcelle à la carte Folium"""
