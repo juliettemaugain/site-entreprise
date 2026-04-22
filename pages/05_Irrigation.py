@@ -188,7 +188,7 @@ DATA_VANNES = {
     "D3": {"nom": "Vanne D3", "lat": 43.424306, "lon": 3.095139, "parcelles_associées": ["arraché"], "ha": 0, "borne_associée": "B_D"},
     "D4": {"nom": "Vanne D4", "lat": 43.424306, "lon": 3.095139, "parcelles_associées": ["Phylloxera"], "ha": 2.12, "borne_associée": "B_D"},
     "D5": {"nom": "Vanne D5", "lat": 43.422917, "lon": 3.095611, "parcelles_associées": ["Vio source Ro"], "ha": 0.59, "borne_associée": "B_D"},
-    "D6": {"nom": "Vanne D6", "lat": 43.421417, "lon": 3.094944, "parcelles_associées": ["Syrah Coural"], "ha": 0.79, "borne_associée": "B_D", "photo": "images/vannes_azalet.jpg"},"D7": {"nom": "Vanne D7", "lat": 43.424972, "lon": 3.093083, "parcelles_associées": ["?"], "ha": 0, "borne_associée": "B_D"},
+    "D6": {"nom": "Vanne D6", "lat": 43.421417, "lon": 3.095222, "parcelles_associées": ["Syrah Coural"], "ha": 0.79, "borne_associée": "B_D", "photo": "images/vannes_azalet.jpg"},
     "D8": {"nom": "Vanne D8", "lat": 43.427250, "lon": 3.093722, "parcelles_associées": ["Vio Jardin"], "ha": 0.86, "borne_associée": "B_D"},
     "D9": {"nom": "Vanne D9", "lat": 43.422917, "lon": 3.095611, "parcelles_associées": ["Alba coural pe"], "ha": 0.12, "borne_associée": "B_D"},
     "D10": {"nom": "Vanne D10", "lat": 43.421194, "lon": 3.097028, "parcelles_associées": ["Alba Coural"], "ha": 0.9, "borne_associée": "B_D"},
@@ -220,16 +220,18 @@ DATA_VANNES = {
 
 def get_image_html(image_path):
     """Transforme une image locale en code lisible par la carte"""
+    # On vérifie si l'image est bien là
+    if not os.path.exists(image_path):
+        # Si elle n'y est pas, ça affichera ce texte en rouge sur la carte !
+        return f'<p style="color:red;"><b>ATTENTION:</b> Impossible de trouver l\'image : <i>{image_path}</i></p>'
+        
     try:
-        if os.path.exists(image_path):
-            with open(image_path, "rb") as image_file:
-                encoded_string = base64.b64encode(image_file.read()).decode()
-            # On affiche l'image avec une belle largeur adaptée à la bulle
-            return f'<img src="data:image/jpeg;base64,{encoded_string}" style="max-width:300px; width:100%; border-radius:5px; margin-bottom:10px;">'
+        with open(image_path, "rb") as image_file:
+            encoded_string = base64.b64encode(image_file.read()).decode()
+        return f'<img src="data:image/jpeg;base64,{encoded_string}" style="max-width:300px; width:100%; border-radius:5px; margin-bottom:10px;">'
     except Exception as e:
-        return f"<p><i>Erreur avec l'image: {e}</i></p>"
-    return ""
-
+        return f"<p style='color:red;'><i>Erreur technique avec l'image: {e}</i></p>"
+    
 def create_popup_content(equipement, equipement_type):
     if equipement_type == "borne":
         # Gestion de la photo de la borne si elle existe
@@ -247,7 +249,7 @@ def create_popup_content(equipement, equipement_type):
         {equipement.get('explications', '')}
         """
         
-    elif equipement_type == "vannes_groupees":
+     elif equipement_type == "vannes_groupees":
         # On cherche si au moins une des vannes du groupe a une photo
         photo_html = ""
         for v in equipement:
@@ -265,7 +267,6 @@ def create_popup_content(equipement, equipement_type):
         return html
         
     return ""
-
 
 def add_parcelle_to_map(m, parcelle_id, parcelle):
     """Ajoute une parcelle à la carte Folium"""
