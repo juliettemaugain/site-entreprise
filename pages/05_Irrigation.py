@@ -217,17 +217,20 @@ DATA_VANNES = {
 }
 
 # ====================== 2. FONCTIONS UTILITAIRES ======================
+
 def get_image_html(image_path):
-    """Transforme l'image pour qu'elle s'affiche dans la carte"""
-    if image_path and os.path.exists(image_path):
-        with open(image_path, "rb") as image_file:
-            encoded_string = base64.b64encode(image_file.read()).decode()
-        # On renvoie une balise image HTML avec des bords arrondis et qui prend la largeur de la bulle
-        return f'<img src="data:image/jpeg;base64,{encoded_string}" style="width:100%; border-radius:8px; margin-bottom:10px;">'
+    """Transforme une image locale en code lisible par la carte"""
+    try:
+        if os.path.exists(image_path):
+            with open(image_path, "rb") as image_file:
+                encoded_string = base64.b64encode(image_file.read()).decode()
+            # On affiche l'image avec une belle largeur adaptée à la bulle
+            return f'<img src="data:image/jpeg;base64,{encoded_string}" style="max-width:300px; width:100%; border-radius:5px; margin-bottom:10px;">'
+    except Exception as e:
+        return f"<p><i>Erreur avec l'image: {e}</i></p>"
     return ""
 
 def create_popup_content(equipement, equipement_type):
-    """Crée le contenu HTML pour les popups"""
     if equipement_type == "borne":
         # Gestion de la photo de la borne si elle existe
         photo_html = ""
@@ -260,6 +263,7 @@ def create_popup_content(equipement, equipement_type):
             html += f"📏 Surface: {v.get('ha', 0)} ha<br>"
             html += "<hr style='margin: 5px 0;'>"
         return html
+        
     return ""
 
 
