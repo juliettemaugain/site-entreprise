@@ -97,7 +97,7 @@ DATA_PARCELLES = {
         }# ... 
 # --- BORNES ET VANNES ---
 DATA_BORNES = {
-    "B_A": {
+    "A": {
         "nom": "Borne A",
         "coords": [43.430944, 3.094250],
         "debit": 25,
@@ -109,7 +109,7 @@ DATA_BORNES = {
         "statut": "OK",
         "vannes_associées": ["A1", "A2", "A3", "A4", "A5", "A6", "A7"]
     },
-    "B_B": {
+    "B": {
         "nom": "Borne B",
         "coords": [43.428972, 3.091889],
         "debit": 20,
@@ -121,7 +121,7 @@ DATA_BORNES = {
         "statut": "OK",
         "vannes_associées": ["B1", "B2", "B3", "B4"]
     },
-    "B_C": {
+    "C": {
         "nom": "Borne C",
         "coords": [43.428528, 3.087639],
         "debit": 25,
@@ -133,7 +133,7 @@ DATA_BORNES = {
         "statut": "OK",
         "vannes_associées": ["C1", "C2", "C3", "C4", "C5", "C6", "C7"]
     },
-    "B_D": {
+    "D": {
         "nom": "Borne D",
         "coords": [43.425722, 3.094417],
         "debit": 35,
@@ -145,7 +145,7 @@ DATA_BORNES = {
         "statut": "OK",
         "vannes_associées": ["D1", "D2", "D3", "D4", "D5", "D6", "D7", "D8", "D9", "D10", "D11", "D12", "D13", "D14", "D15"]
     },
-    "B_K": {
+    "K": {
         "nom": "Borne K",
         "coords": [43.421944, 3.084639],
         "debit": 20,
