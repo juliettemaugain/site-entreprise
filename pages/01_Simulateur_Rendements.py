@@ -239,54 +239,19 @@ if "historique" in st.session_state and st.session_state.historique:
         key='download-csv'
     )
 
-    # Solution alternative pour copier sans pyperclip
+    # Solution alternative pour copier sans JavaScript
     st.markdown("### Copier le tableau")
-    st.markdown("""
-    <div class="copy-container">
-        <textarea class="copy-textarea" id="copyTable"></textarea>
-        <button onclick="copyToClipboard()" class="copy-button">📋 Copier dans le presse-papiers</button>
-    </div>
 
-    <script>
-    function copyToClipboard() {
-        // Convertir le tableau en texte
-        const table = document.querySelector('.stDataFrame');
-        let text = '';
-
-        // Récupérer les en-têtes
-        const headers = table.querySelectorAll('thead th');
-        let headerText = [];
-        headers.forEach(header => {
-            headerText.push(header.textContent);
-        });
-        text += headerText.join('\t') + '\n';
-
-        // Récupérer les données
-        const rows = table.querySelectorAll('tbody tr');
-        rows.forEach(row => {
-            const cells = row.querySelectorAll('td');
-            let rowText = [];
-            cells.forEach(cell => {
-                rowText.push(cell.textContent);
-            });
-            text += rowText.join('\t') + '\n';
-        });
-
-        // Copier dans le presse-papiers
-        const textarea = document.getElementById('copyTable');
-        textarea.value = text;
-        textarea.select();
-        document.execCommand('copy');
-
-        // Afficher un message de confirmation
-        const button = event.target;
-        button.textContent = '✅ Copié !';
-        setTimeout(() => {
-            button.textContent = '📋 Copier dans le presse-papiers';
-        }, 2000);
-    }
-    </script>
-    """, unsafe_allow_html=True)
+    # Afficher le tableau en texte brut dans un expander
+    with st.expander("Voir le texte à copier"):
+        # Convertir le DataFrame en texte tabulé
+        table_text = df.to_csv(sep='\t', index=False)
+        st.text_area(
+            "Copiez ce texte (Ctrl+A puis Ctrl+C)",
+            value=table_text,
+            height=200,
+            key="copy_text_area"
+        )
 
     st.dataframe(df)
 
