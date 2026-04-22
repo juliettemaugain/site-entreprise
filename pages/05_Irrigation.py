@@ -228,14 +228,17 @@ def create_popup_content(equipement, equipement_type):
     
         {equipement['explications']}
         """
-    elif equipement_type == "vanne":
-        parcelles_str = ", ".join(equipement['parcelles_associées'])
-        return f"""
-        <h4>{equipement['nom']}</h4>
-        <b>Borne reliée:</b> {equipement['borne_associée']}<br>
-        <b>Parcelle(s):</b> {parcelles_str}<br>
-        <b>Surface:</b> {equipement.get('ha', 0)} ha
-        """
+    elif equipement_type == "vannes_groupees":
+        # 'equipement' est ici une liste de vannes au même endroit
+        html = f"<h4>📍 Regroupement de {len(equipement)} vanne(s)</h4>"
+        for v in equipement:
+            parcelles_str = ", ".join(v['parcelles_associées'])
+            html += f"<b>{v['nom']}</b> (Reliée à {v['borne_associée']})<br>"
+            html += f"🌱 Parcelle(s): {parcelles_str}<br>"
+            html += f"📏 Surface: {v.get('ha', 0)} ha<br>"
+            # C'est ici que tu pourras ajouter la balise <img src="..."> plus tard !
+            html += "<hr style='margin: 5px 0;'>"
+        return html
     return ""
 
 def add_parcelle_to_map(m, parcelle_id, parcelle):
@@ -283,13 +286,30 @@ for borne_id, borne in DATA_BORNES.items():
     ).add_child(folium.Popup(popup_content, max_width=300)).add_to(m)
 
 # --- 3. Ajouter les VANNES ---
+# --- 3. Ajouter les VANNES (Regroupées par coordonnées) ---
+vannes_par_coords = {}
+
+# On trie les vannes selon leurs coordonnées GPS
 for vanne_id, vanne in DATA_VANNES.items():
-    popup_content = create_popup_content(vanne, "vanne")
+    coords = (vanne["lat"], vanne["lon"])
+    if coords not in vannes_par_coords:
+        vannes_par_coords[coords] = []
+    vannes_par_coords[coords].append(vanne)
+
+# On affiche un seul marqueur par groupe de coordonnées
+for coords, liste_vannes in vannes_par_coords.items():
+    popup_content = create_popup_content(liste_vannes, "vannes_groupees")
+    
+    # Le texte au survol de la souris
+    noms_vannes = ", ".join([v["nom"] for v in liste_vannes])
+    tooltip_text = f"{len(liste_vannes)} Vanne(s) : {noms_vannes}"
+    
     folium.Marker(
-        location=[vanne["lat"], vanne["lon"]],
+        location=[coords[0], coords[1]],
         icon=folium.Icon(color="green", icon="fa-faucet", prefix="fa"),
-        tooltip=f"Vanne {vanne_id}"
-    ).add_child(folium.Popup(popup_content, max_width=300)).add_to(m)
+        tooltip=tooltip_text
+    ).add_child(folium.Popup(popup_content, max_width=350)).add_to(m)
+
 
 # --- 4. Relier bornes et vannes (CORRIGÉ avec coords[0] et coords[1]) ---
 for borne_id, borne in DATA_BORNES.items():
