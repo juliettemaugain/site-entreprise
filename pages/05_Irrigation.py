@@ -94,16 +94,74 @@ DATA_PARCELLES = {
 
 # --- BORNES ET VANNES (tes données existantes) ---
 DATA_BORNES = {
-    "B_01": {
-        "nom": "Borne Principale Gauphine",
-        "lat": 43.4025,
-        "lon": 3.1155,
-        "debit": 20,
-        "pression": 3.5,
-        "photos": ["images/bornes/B01_front.jpg"],
-        "explications": "Nettoyage: vérifier le filtre tous les 15 jours...",
+    "B_A": {
+        "nom": "Borne A",
+        "coords": [43.430944, 3.094250],
+        "debit": 25,
+        "pression": 3.5,  # À ajuster si tu as cette info
+        "hectares": 3.5,
+        "parcelles": [
+            "Roumanissas", "Nouveau plantier Syrah", "Syrah roumanissas",
+            "Syrah du muscat", "Syrah hébram", "Plantier"
+        ],
+        "photos": ["images/bornes/B_A_front.jpg", "images/bornes/B_A_side.jpg"],
+        "explications": "Borne principale pour les parcelles Roumanissas et alentours. Débit élevé pour couvrir les 3.5 hectares.",
         "statut": "OK",
-        "vannes_associées": ["V_01"]
+        "vannes_associées": ["A1", "A2", "A3", "A4", "A5", "A6", "A7"]  # À compléter avec tes vannes
+    },
+    "B_B": {
+        "nom": "Borne B",
+        "coords": [43.428972, 3.091889],
+        "debit": 20,
+        "pression": 3.0,
+        "hectares": 2.8,
+        "parcelles": ["Syrah Isabelle", "Amandier", "Olivette"],
+        "photos": ["images/bornes/B_B_front.jpg"],
+        "explications": "Borne pour les parcelles Syrah Isabelle et Olivette. Débit modéré pour 2.8 hectares.",
+        "statut": "OK",
+        "vannes_associées": ["B1", "B2", "B3", "B4"]
+    },
+    "B_C": {
+        "nom": "Borne C",
+        "coords": [43.428528, 3.087639],
+        "debit": 25,
+        "pression": 3.5,
+        "hectares": 3.5,
+        "parcelles": ["Hébram", "Calvet", "Caravane", "La Plaine", "Trompet"],
+        "photos": ["images/bornes/B_C_front.jpg"],
+        "explications": "Borne couvrant les parcelles centrales (Hébram, Calvet). Débit adapté aux 3.5 hectares.",
+        "statut": "OK",
+        "vannes_associées": ["C1", "C2", "C3", "C4", "C5", "C6", "C7"]
+    },
+    "B_D": {
+        "nom": "Borne D",
+        "coords": [43.425722, 3.094417],
+        "debit": 35,
+        "pression": 4.0,
+        "hectares": 4.9,
+        "parcelles": [
+            "Vio Jardin", "Saigne", "Phylloxera", "Alba Coural",
+            "Syrah Coural", "Vio source Romaine", "Viognier Alazet cabane", "Viognier Alazet"
+        ],
+        "photos": ["images/bornes/B_D_front.jpg"],
+        "explications": "Borne avec le débit le plus élevé (35 m³/h) pour couvrir 4.9 hectares. Parcelles variées (Viognier, Syrah).",
+        "statut": "OK",
+        "vannes_associées": ["D1", "D2", "D3", "D4", "D5", "D6", "D7", "D8", "D9", "D10", "D11", "D12", "D13", "D14", "D15"]
+    },
+    "B_K": {
+        "nom": "Borne K",
+        "coords": [43.421944, 3.084639],
+        "debit": 20,
+        "pression": 3.0,
+        "hectares": 2.8,
+        "parcelles": [
+            "Grand Bardou", "Petit Bardou", "Plantier terret",
+            "Brunaude Alba", "La Brunaude", "Plantier Vio Brunaude", "CF Brunaude"
+        ],
+        "photos": ["images/bornes/B_K_front.jpg"],
+        "explications": "Borne pour les parcelles Bardou et Brunaude. Débit standard pour 2.8 hectares.",
+        "statut": "OK",
+        "vannes_associées": ["K1", "K2", "K3", "K4", "K5", "K6", "K7", "K8", "K9", "K10", "K11", "K12", "K13", "K14", "K15", "K16"]
     }
 }
 
