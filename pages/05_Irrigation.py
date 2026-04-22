@@ -105,7 +105,7 @@ DATA_BORNES = {
         "hectares": 3.5,
         "parcelles": ["Roumanissas", "Nouveau plantier Syrah", "Syrah roumanissas", "Syrah du muscat", "Syrah hébram", "Plantier"],
         "photos": ["images/bornes/B_A_front.jpg", "images/bornes/B_A_side.jpg"],
-        "explications": "RAS",
+        "explications": "parcelles : Roumanissas, Nouveau plantier Syrah, Syrah roumanissas, Syrah du muscat, syrah hébram, Plantier",
         "statut": "OK",
         "vannes_associées": ["A1", "A2", "A3", "A4", "A5", "A6", "A7"]
     },
