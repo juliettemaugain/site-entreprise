@@ -181,7 +181,7 @@ def create_popup_content(equipement, equipement_type):
         <b>Débit:</b> {equipement['debit']} m³/h<br>
         <b>Pression:</b> {equipement['pression']} bars<br>
         <b>Surface:</b> {equipement['hectares']} ha<br>
-        <hr>
+    
         {equipement['explications']}
         """
     elif equipement_type == "vanne":
