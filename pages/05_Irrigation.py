@@ -160,16 +160,59 @@ DATA_BORNES = {
 }
 
 DATA_VANNES = {
-    "V_01": {
-        "nom": "Vanne Syrah Isabelle",
-        "lat": 43.4290,
-        "lon": 3.0930,
-        "type": "Électrovanne 2 pouces",
-        "photos": ["images/vannes/V01_vanne.jpg"],
-        "explications": "Parcelles irriguées: P_00 (Syrah Isabelle)...",
-        "borne_associée": "B_01",
-        "parcelles_associées": ["P_00"]
-    }
+    "A1": {"nom": "Vanne A1", "lat": 43.431194, "lon": 3.091833, "parcelles_associées": ["Roumanissas"], "ha": 1.9, "borne_associée": "B_A"},
+    "A2": {"nom": "Vanne A2", "lat": 43.432278, "lon": 3.090444, "parcelles_associées": ["Syrah rouman"], "ha": 0.46, "borne_associée": "B_A"},
+    "A3": {"nom": "Vanne A3", "lat": 43.432278, "lon": 3.090444, "parcelles_associées": ["Nouveau plant"], "ha": 2.22, "borne_associée": "B_A"},
+    "A4": {"nom": "Vanne A4", "lat": 43.432278, "lon": 3.090444, "parcelles_associées": ["Nouveau plant"], "ha": 2.22, "borne_associée": "B_A"},
+    "A5": {"nom": "Vanne A5", "lat": 43.430944, "lon": 3.092306, "parcelles_associées": ["Plantier"], "ha": 0.3, "borne_associée": "B_A"},
+    "A6": {"nom": "Vanne A6", "lat": 43.430500, "lon": 3.089444, "parcelles_associées": ["Syrah du mus"], "ha": 0.63, "borne_associée": "B_A"},
+    "A7": {"nom": "Vanne A7", "lat": 43.430500, "lon": 3.089444, "parcelles_associées": ["syrah hébram"], "ha": 0.61, "borne_associée": "B_A"},
+    
+    "B1": {"nom": "Vanne B1", "lat": 43.428889, "lon": 3.092000, "parcelles_associées": ["Amandier"], "ha": 1.95, "borne_associée": "B_B"},
+    "B2": {"nom": "Vanne B2", "lat": 43.428889, "lon": 3.092000, "parcelles_associées": ["Amandier", "Oli"], "ha": 1.95, "borne_associée": "B_B"},
+    "B3": {"nom": "Vanne B3", "lat": 43.428889, "lon": 3.092000, "parcelles_associées": ["Olivette"], "ha": 1.95, "borne_associée": "B_B"},
+    "B4": {"nom": "Vanne B4", "lat": 43.428889, "lon": 3.092000, "parcelles_associées": ["Syrah Isabelle"], "ha": 0.56, "borne_associée": "B_B"},
+
+    "C1": {"nom": "Vanne C1", "lat": 43.428611, "lon": 3.088028, "parcelles_associées": ["Hébram long"], "ha": 2.0, "borne_associée": "B_C"},
+    "C2": {"nom": "Vanne C2", "lat": 43.428611, "lon": 3.088028, "parcelles_associées": ["Hébram court"], "ha": 0.69, "borne_associée": "B_C"},
+    "C3": {"nom": "Vanne C3", "lat": 43.428639, "lon": 3.085722, "parcelles_associées": ["Caravane"], "ha": 1.34, "borne_associée": "B_C"},
+    "C4": {"nom": "Vanne C4", "lat": 43.428000, "lon": 3.086778, "parcelles_associées": ["Syrah du Virage"], "ha": 0, "borne_associée": "B_C"},
+    "C5": {"nom": "Vanne C5", "lat": 43.428000, "lon": 3.086778, "parcelles_associées": ["Calvet"], "ha": 2.03, "borne_associée": "B_C"},
+    "C6": {"nom": "Vanne C6", "lat": 43.428000, "lon": 3.086778, "parcelles_associées": ["La Plaine"], "ha": 2.05, "borne_associée": "B_C"},
+    "C7": {"nom": "Vanne C7", "lat": 43.426528, "lon": 3.087889, "parcelles_associées": ["Trompet"], "ha": 1.81, "borne_associée": "B_C"},
+
+    "D1": {"nom": "Vanne D1", "lat": 43.426361, "lon": 3.093750, "parcelles_associées": ["Saigne"], "ha": 1.35, "borne_associée": "B_D"},
+    "D2": {"nom": "Vanne D2", "lat": 43.425833, "lon": 3.093028, "parcelles_associées": ["Saigne"], "ha": 1.35, "borne_associée": "B_D"},
+    "D3": {"nom": "Vanne D3", "lat": 43.424306, "lon": 3.095139, "parcelles_associées": ["arraché"], "ha": 0, "borne_associée": "B_D"},
+    "D4": {"nom": "Vanne D4", "lat": 43.424306, "lon": 3.095139, "parcelles_associées": ["Phylloxera"], "ha": 2.12, "borne_associée": "B_D"},
+    "D5": {"nom": "Vanne D5", "lat": 43.422917, "lon": 3.095611, "parcelles_associées": ["Vio source Ro"], "ha": 0.59, "borne_associée": "B_D"},
+    "D6": {"nom": "Vanne D6", "lat": 43.421417, "lon": 3.095222, "parcelles_associées": ["Syrah Coural"], "ha": 0.79, "borne_associée": "B_D"},
+    "D7": {"nom": "Vanne D7", "lat": 43.424972, "lon": 3.093083, "parcelles_associées": ["?"], "ha": 0, "borne_associée": "B_D"},
+    "D8": {"nom": "Vanne D8", "lat": 43.427250, "lon": 3.093722, "parcelles_associées": ["Vio Jardin"], "ha": 0.86, "borne_associée": "B_D"},
+    "D9": {"nom": "Vanne D9", "lat": 43.422917, "lon": 3.095611, "parcelles_associées": ["Alba coural pe"], "ha": 0.12, "borne_associée": "B_D"},
+    "D10": {"nom": "Vanne D10", "lat": 43.421194, "lon": 3.097028, "parcelles_associées": ["Alba Coural"], "ha": 0.9, "borne_associée": "B_D"},
+    "D11": {"nom": "Vanne D11", "lat": 43.421417, "lon": 3.095222, "parcelles_associées": ["viognier Alazet"], "ha": 0.8, "borne_associée": "B_D"},
+    "D12": {"nom": "Vanne D12", "lat": 43.421417, "lon": 3.095222, "parcelles_associées": ["viognier Alazet"], "ha": 0.43, "borne_associée": "B_D"},
+    "D13": {"nom": "Vanne D13", "lat": 43.421417, "lon": 3.095222, "parcelles_associées": ["viognier Alazet"], "ha": 0.43, "borne_associée": "B_D"},
+    "D14": {"nom": "Vanne D14", "lat": 43.421417, "lon": 3.095222, "parcelles_associées": ["viognier Alazet"], "ha": 0.43, "borne_associée": "B_D"},
+    "D15": {"nom": "Vanne D15", "lat": 43.421417, "lon": 3.095222, "parcelles_associées": ["merlot"], "ha": 0.75, "borne_associée": "B_D"},
+
+    "K1": {"nom": "Vanne K1", "lat": 43.423528, "lon": 3.085806, "parcelles_associées": ["petit bardou"], "ha": 1.0, "borne_associée": "B_K"},
+    "K2": {"nom": "Vanne K2", "lat": 43.423528, "lon": 3.085806, "parcelles_associées": ["petit bardou"], "ha": 0.95, "borne_associée": "B_K"},
+    "K3": {"nom": "Vanne K3", "lat": 43.423417, "lon": 3.087389, "parcelles_associées": ["Grand Bardou"], "ha": 1.0, "borne_associée": "B_K"},
+    "K4": {"nom": "Vanne K4", "lat": 43.423417, "lon": 3.087389, "parcelles_associées": ["Grand Bardou"], "ha": 1.0, "borne_associée": "B_K"},
+    "K5": {"nom": "Vanne K5", "lat": 43.423250, "lon": 3.088722, "parcelles_associées": ["Grand Bardou"], "ha": 1.0, "borne_associée": "B_K"},
+    "K6": {"nom": "Vanne K6", "lat": 43.423250, "lon": 3.088722, "parcelles_associées": ["Grand Bardou"], "ha": 1.0, "borne_associée": "B_K"},
+    "K7": {"nom": "Vanne K7", "lat": 43.423278, "lon": 3.089944, "parcelles_associées": ["Grand Bardou"], "ha": 1.0, "borne_associée": "B_K"},
+    "K8": {"nom": "Vanne K8", "lat": 43.423278, "lon": 3.089944, "parcelles_associées": ["Grand Bardou"], "ha": 1.0, "borne_associée": "B_K"},
+    "K9": {"nom": "Vanne K9", "lat": 43.423611, "lon": 3.091444, "parcelles_associées": ["?"], "ha": 0, "borne_associée": "B_K"},
+    "K10": {"nom": "Vanne K10", "lat": 43.423611, "lon": 3.091444, "parcelles_associées": ["Plantier terret"], "ha": 1.0, "borne_associée": "B_K"},
+    "K11": {"nom": "Vanne K11", "lat": 43.423611, "lon": 3.091444, "parcelles_associées": ["Plantier terret"], "ha": 1.12, "borne_associée": "B_K"},
+    "K12": {"nom": "Vanne K12", "lat": 43.421583, "lon": 3.089778, "parcelles_associées": ["Brunaude Alba"], "ha": 1.09, "borne_associée": "B_K"},
+    "K13": {"nom": "Vanne K13", "lat": 43.421583, "lon": 3.089778, "parcelles_associées": ["La Brunaude"], "ha": 0.83, "borne_associée": "B_K"},
+    "K14": {"nom": "Vanne K14", "lat": 43.421583, "lon": 3.089778, "parcelles_associées": ["Plantier Vio Br"], "ha": 0.75, "borne_associée": "B_K"},
+    "K15": {"nom": "Vanne K15", "lat": 43.421583, "lon": 3.089778, "parcelles_associées": ["x"], "ha": 0, "borne_associée": "B_K"},
+    "K16": {"nom": "Vanne K16", "lat": 43.421583, "lon": 3.089778, "parcelles_associées": ["CF Brunaude"], "ha": 0.69, "borne_associée": "B_K"}
 }
 
 # ====================== 2. FONCTIONS UTILITAIRES ======================
@@ -186,13 +229,12 @@ def create_popup_content(equipement, equipement_type):
         {equipement['explications']}
         """
     elif equipement_type == "vanne":
+        parcelles_str = ", ".join(equipement['parcelles_associées'])
         return f"""
         <h4>{equipement['nom']}</h4>
-        <b>Type:</b> {equipement['type']}<br>
-        <b>Borne:</b> {equipement['borne_associée']}<br>
-        <b>Parcelles:</b> {', '.join(equipement['parcelles_associées'])}
-        <hr>
-        {equipement['explications']}
+        <b>Borne reliée:</b> {equipement['borne_associée']}<br>
+        <b>Parcelle(s):</b> {parcelles_str}<br>
+        <b>Surface:</b> {equipement.get('ha', 0)} ha
         """
     return ""
 
