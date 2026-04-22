@@ -1,6 +1,8 @@
 import streamlit as st
 import pandas as pd
 from datetime import datetime
+import pyperclip  # Pour copier dans le presse-papiers
+import io  # Pour générer le CSV
 
 st.set_page_config(page_title="Simulateur de rendements viticoles", page_icon="🍷")
 
@@ -16,8 +18,36 @@ st.markdown("""
         margin-top: -10px;
         margin-bottom: 20px;
     }
-    .result-table td {
-        padding: 5px 15px;
+    .result-card {
+        background-color: #f0f2f6;
+        border-radius: 10px;
+        padding: 20px;
+        margin: 10px 0;
+        box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+    }
+    .result-highlight {
+        font-size: 24px;
+        font-weight: bold;
+        color: #2a5885;
+        text-align: center;
+    }
+    .result-label {
+        font-size: 14px;
+        color: #666;
+        text-align: center;
+    }
+    .copy-button {
+        background-color: #4CAF50;
+        color: white;
+        border: none;
+        padding: 8px 16px;
+        text-align: center;
+        text-decoration: none;
+        display: inline-block;
+        font-size: 14px;
+        margin: 4px 2px;
+        cursor: pointer;
+        border-radius: 4px;
     }
     </style>
 """, unsafe_allow_html=True)
@@ -78,7 +108,6 @@ methode = st.radio("Méthode de saisie :", ["Tableau Excel (nombre variable de p
 moyenne_grappes = 0.0
 
 if methode == "Tableau Excel (nombre variable de pieds)":
-    # Sélection du nombre d'observations
     nb_observations = st.number_input(
         "Nombre d'observations (pieds à compter)",
         min_value=1,
@@ -87,7 +116,6 @@ if methode == "Tableau Excel (nombre variable de pieds)":
         step=1
     )
 
-    # Création du tableau dynamique
     default_data = {
         "Pied": list(range(1, nb_observations + 1)),
         "Nombre de grappes": [0] * nb_observations
@@ -176,11 +204,26 @@ if st.button("Calculer le rendement"):
             - **Pieds/ha** : {nb_pieds}
             - **Manquants** : {manquants} %
             - **Pertes** : {pertes} %
-            ---
-            - ✅ **Rendement estimé** : **{round(rendement_t_ha, 2)} t/ha**
-            - 🍷 **Rendement vin estimé** : **{round(rendement_hl_ha, 2)} hl/ha**
             """
         )
+
+        # Affichage des résultats principaux dans des cartes
+        col1, col2 = st.columns(2)
+        with col1:
+            st.markdown(f"""
+            <div class="result-card">
+                <div class="result-highlight">{round(rendement_t_ha, 2)} t/ha</div>
+                <div class="result-label">Rendement estimé</div>
+            </div>
+            """, unsafe_allow_html=True)
+
+        with col2:
+            st.markdown(f"""
+            <div class="result-card">
+                <div class="result-highlight">{round(rendement_hl_ha, 2)} hl/ha</div>
+                <div class="result-label">Rendement vin estimé</div>
+            </div>
+            """, unsafe_allow_html=True)
 
     if "historique" not in st.session_state:
         st.session_state.historique = []
@@ -190,6 +233,25 @@ if st.button("Calculer le rendement"):
 st.subheader("Historique des simulations 📊")
 if "historique" in st.session_state and st.session_state.historique:
     df = pd.DataFrame(st.session_state.historique)
+
+    # Bouton pour copier le tableau
+    csv = df.to_csv(index=False).encode('utf-8')
+    st.download_button(
+        label="📋 Copier le tableau (CSV)",
+        data=csv,
+        file_name='historique_rendements.csv',
+        mime='text/csv',
+        key='download-csv'
+    )
+
+    # Bouton pour copier dans le presse-papiers
+    if st.button("📋 Copier dans le presse-papiers"):
+        try:
+            pyperclip.copy(df.to_csv(index=False))
+            st.success("Tableau copié dans le presse-papiers !")
+        except:
+            st.warning("Impossible de copier automatiquement. Utilisez le bouton de téléchargement CSV.")
+
     st.dataframe(df)
 
     col1, col2 = st.columns(2)
