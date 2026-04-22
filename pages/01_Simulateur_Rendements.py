@@ -160,8 +160,8 @@ pertes = st.number_input(
     "Pourcentage de pertes à la récolte (%)",
     min_value=0.0,
     max_value=100.0,
-    value=5.0,
-    step=0.01,
+    value=0.0,
+    step=0.10,
     format="%.2f"
 )
 
