@@ -220,51 +220,17 @@ DATA_VANNES = {
 # ====================== 2. FONCTIONS UTILITAIRES ======================
 
 def get_image_html(image_path):
-    """Transforme une image locale en code lisible par la carte avec option PLEIN ÉCRAN"""
+    """Transforme une image locale en code lisible par la carte"""
     # On vérifie si l'image est bien là
     if not os.path.exists(image_path):
         return f'<p style="color:red;"><b>ATTENTION:</b> Impossible de trouver l\'image : <i>{image_path}</i></p>'
-
+        
     try:
         with open(image_path, "rb") as image_file:
             encoded_string = base64.b64encode(image_file.read()).decode()
-            
-        # C'est ici qu'on met l'image interactive ! 
-        # Attention aux doubles accolades {{ }} qui sont normales en Python ici.
-        return f"""
-        <img src="data:image/jpeg;base64,{encoded_string}" 
-             style="max-width:300px; width: 100%; border-radius: 8px; cursor: pointer; transition: 0.3s; margin-bottom: 5px;"
-             onclick="
-                if(this.style.position === 'fixed') {{
-                    /* Retour à la normale (dans la bulle) */
-                    this.style.position = 'static';
-                    this.style.width = '100%';
-                    this.style.maxWidth = '300px';
-                    this.style.height = 'auto';
-                    this.style.zIndex = '1';
-                    this.style.backgroundColor = 'transparent';
-                }} else {{
-                    /* Mode plein écran par dessus la carte */
-                    this.style.position = 'fixed';
-                    this.style.top = '0';
-                    this.style.left = '0';
-                    this.style.width = '100vw';
-                    this.style.maxWidth = 'none';
-                    this.style.height = '100vh';
-                    this.style.objectFit = 'contain';
-                    this.style.zIndex = '9999';
-                    this.style.backgroundColor = 'rgba(0,0,0,0.9)';
-                }}
-             " 
-             title="Cliquez pour agrandir/réduire"
-        >
-        <div style="text-align: center; font-size: 12px; color: gray; margin-bottom: 10px;">
-            🔍 Cliquez sur la photo pour zoomer
-        </div>
-        """
+        return f'<img src="data:image/jpeg;base64,{encoded_string}" style="max-width:300px; width:100%; border-radius:5px; margin-bottom:10px;">'
     except Exception as e:
         return f"<p style='color:red;'><i>Erreur technique avec l'image: {e}</i></p>"
-    
     
 def create_popup_content(equipement, equipement_type):
     if equipement_type == "borne":
